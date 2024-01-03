@@ -1,8 +1,13 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.ShellRunner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
+import com.intellij.notification.Notification
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationType
+import com.intellij.notification.Notifications
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFileFactory
@@ -13,6 +18,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.jetbrains.concurrency.runAsync
 import java.nio.file.NoSuchFileException
 
 class ISPSvelteSource(private val project: Project): ISPSource {
@@ -85,6 +91,7 @@ class ISPSvelteSource(private val project: Project): ISPSource {
             }.flatten()
         }
 
+        // Install component
         val component = fetchComponent(componentName)
         val components = listOf(component, *getRegistryDependencies(fetchComponent(componentName)).toTypedArray())
         val config = getLocalConfig()
@@ -99,7 +106,49 @@ class ISPSvelteSource(private val project: Project): ISPSource {
                 FileManager(project).saveFileAtPath(psiFile, path)
             }
         }
-        // TODO: what to do with the dependencies to install? Notify or install them?
+
+        // Install dependencies
+        val manager = DependencyManager(project)
+        val depsToInstall = component.dependencies.filter { dependency ->
+            !manager.isDependencyInstalled(dependency)
+        }
+        if (depsToInstall.isEmpty()) return
+        val dependenciesList = with(depsToInstall) {
+            if (size == 1) first() else {
+                "${dropLast(1).joinToString(", ")} and ${last()}"
+            }
+        }
+        Notifications.Bus.notify(
+            Notification(
+                "shadcn/ui",
+                "Installed ${component.name}",
+                "${component.name} requires $dependenciesList to be installed.",
+                NotificationType.INFORMATION
+            ).apply {
+                mapOf(
+                    "Install" to DependencyManager.InstallationType.PROD,
+                    "Install as dev" to DependencyManager.InstallationType.DEV
+                ).forEach { (label, installType) ->
+                    addAction(NotificationAction.createSimple(label) {
+                        runAsync {
+                            manager.installDependencies(depsToInstall, installType)
+                        }.then {
+                            Notifications.Bus.notifyAndHide(
+                                Notification(
+                                    "shadcn/ui",
+                                    "Installed $dependenciesList",
+                                    "Installed $dependenciesList for ${component.name}.",
+                                    NotificationType.INFORMATION
+                                ),
+                                project
+                            )
+                        }
+                        hideBalloon()
+                    })
+                }
+            },
+            project
+        )
     }
 
     override fun isComponentUpToDate(componentName: String): Boolean {

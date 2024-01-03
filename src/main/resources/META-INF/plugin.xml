@@ -18,5 +18,8 @@
                 icon="ISPIcons.logo"
                 anchor="right"
                 factoryClass="com.github.warningimhack3r.intellijshadcnplugin.ui.ISPToolWindow" />
+        <notificationGroup
+                id="shadcn/ui"
+                displayType="STICKY_BALLOON" />
     </extensions>
 </idea-plugin>

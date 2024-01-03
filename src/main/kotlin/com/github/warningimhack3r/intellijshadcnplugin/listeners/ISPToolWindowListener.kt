@@ -13,8 +13,9 @@ class ISPToolWindowListener(private val project: Project) : ToolWindowManagerLis
         val previousState = isToolWindowOpen
         isToolWindowOpen = toolWindowManager.getToolWindow(toolWindowId)?.isVisible ?: false
         if (previousState == false && isToolWindowOpen == true) {
-            toolWindowManager.getToolWindow(toolWindowId)?.let {
-                with(it.contentManager.getContent(0)!!.component) {
+            toolWindowManager.getToolWindow(toolWindowId)?.contentManager?.getContent(0)?.let {
+                with(it.component) {
+                    if (components.isEmpty()) return@let
                     remove(components[0])
                     add(ISPWindowContents(project).panel())
                     revalidate()
