@@ -21,14 +21,14 @@ import kotlinx.serialization.json.*
 import org.jetbrains.concurrency.runAsync
 import java.nio.file.NoSuchFileException
 
-class ISPReactSource(private val project: Project): ISPSource {
-    override var domain = "https://ui.shadcn.com"
-    override var language = "React"
+class ISPSolidSource(private val project: Project): ISPSource {
+    override var domain = "https://shadcn-solid.vercel.app"
+    override var language = "Solid"
 
-    private fun fetchComponent(componentName: String): ReactTypes.ComponentWithContents {
+    private fun fetchComponent(componentName: String): SolidTypes.ComponentWithContents {
         val style = getLocalConfig().style
         val response = RequestSender.sendRequest("$domain/registry/styles/$style/$componentName.json")
-        return response.body?.let { Json.decodeFromString<ReactTypes.ComponentWithContents>(it) } ?: throw Exception("Component not found")
+        return response.body?.let { Json.decodeFromString<SolidTypes.ComponentWithContents>(it) } ?: throw Exception("Component not found")
     }
 
     private fun fetchColors(): JsonElement {
@@ -37,18 +37,10 @@ class ISPReactSource(private val project: Project): ISPSource {
         return response.body?.let { Json.parseToJsonElement(it) } ?: throw Exception("Colors not found")
     }
 
-    private fun getLocalConfig(): ReactTypes.Config {
+    private fun getLocalConfig(): SolidTypes.Config {
         return FileManager(project).getFileContentsAtPath("components.json")?.let {
             Json.decodeFromString(it)
         } ?: throw NoSuchFileException("components.json not found")
-    }
-
-    private fun getConfigFileName(fileName: String): String {
-        return if (!getLocalConfig().tsx) {
-            fileName
-                .replace(Regex("\\.tsx$"), ".ts")
-                .replace(Regex("\\.jsx$"), ".js")
-        } else fileName
     }
 
     private fun resolveAlias(alias: String): String {
@@ -59,7 +51,7 @@ class ISPReactSource(private val project: Project): ISPSource {
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get("${alias.substringBefore("/")}/*")
             ?.jsonArray?.get(0)
-            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias") // TODO: fallback to vite.config.(j|t)s for all
+            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias")
         return aliasPath.replace(Regex("^\\./"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/"))
     }
@@ -72,95 +64,63 @@ class ISPReactSource(private val project: Project): ISPSource {
         }
 
         val config = getLocalConfig()
-        // Note: this condition does not replace UI paths (= $components/$ui) by the components path
-        // if the UI alias is not set.
-        // For me, this is a bug, but I'm following what the original code does for parity
-        // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L10-L23).
-        var newContents = if (config.aliases.ui != null) {
-            contents.replace(
-                Regex("@/registry/[^/]+/ui"), cleanAlias(config.aliases.ui)
-            )
-        } else contents.replace(
+        val newContents = contents.replace(
             Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
-        )
-        newContents = newContents.replace(
+        ).replace(
             // Note: this does not prevent additional imports other than "cn" from being replaced,
-            // but I'm once again following what the original code does for parity
-            // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L25-L35).
-            Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"@/lib/utils"), config.aliases.utils
-        ).applyIf(config.rsc) {
-            replace(
-                Regex("\"use client\";*\n"), ""
-            )
-        }
+            // but I'm following what the original code does for parity
+            // (https://github.com/hngngn/shadcn-solid/blob/b808e0ecc9fd4689572d9fc0dfb7af81606a11f2/packages/cli/src/utils/transformers/transform-import.ts#L20-L29).
+            Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"@/lib/cn"), config.aliases.utils
+        )
 
-        /**
-         * Prepends `tw-` to all Tailwind classes.
-         * @param classes The classes to prefix, an unquoted string of space-separated class names.
-         * @param prefix The prefix to add to each class name.
-         * @return The prefixed classes.
-         */
-        fun prefixClasses(classes: String, prefix: String): String = classes
-            .split(" ")
-            .filterNot { it.isEmpty() }
-            .joinToString(" ") {
-                val className = it.trim().split(":")
-                if (className.size == 1) {
-                    "$prefix${className[0]}"
-                } else {
-                    "${className.dropLast(1).joinToString(":")}:$prefix${className.last()}"
-                }
-            }
-
-        /**
-         * Converts CSS variables to Tailwind utility classes.
-         * @param classes The classes to convert, an unquoted string of space-separated class names.
-         * @param lightColors The light colors map to use.
-         * @param darkColors The dark colors map to use.
-         * @return The converted classes.
-         */
-        fun variablesToUtilities(classes: String, lightColors: Map<String, String>, darkColors: Map<String, String>): String {
-            // Note: this does not include `border` classes at the beginning or end of the string,
-            // but I'm once again following what the original code does for parity
-            // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-css-vars.ts#L142-L145).
-            val newClasses = classes.replace(" border ", " border border-border ")
-
-            val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
-
+        return if (!config.tailwind.cssVariables) {
             /**
-             * Replaces a class with CSS variables with Tailwind utility classes.
-             * @param class The class to replace.
-             * @return The replaced class.
+             * Converts CSS variables to Tailwind utility classes.
+             * @param classes The classes to convert, an unquoted string of space-separated class names.
+             * @param lightColors The light colors map to use.
+             * @param darkColors The dark colors map to use.
+             * @return The converted classes.
              */
-            fun replaceClass(`class`: String): String {
-                val prefix = prefixesToReplace.find { `class`.startsWith(it) } ?: return `class`
-                val color = `class`.substringAfter(prefix)
-                val lightColor = lightColors[color]
-                val darkColor = darkColors[color]
-                return if (lightColor != null && darkColor != null) {
-                    "$prefix$lightColor dark:$prefix$darkColor"
-                } else `class`
+            fun variablesToUtilities(classes: String, lightColors: Map<String, String>, darkColors: Map<String, String>): String {
+                // Note: this does not include `border` classes at the beginning or end of the string,
+                // but I'm once again following what the original code does for parity
+                // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-css-vars.ts#L142-L145).
+                val newClasses = classes.replace(" border ", " border border-border ")
+
+                val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
+
+                /**
+                 * Replaces a class with CSS variables with Tailwind utility classes.
+                 * @param class The class to replace.
+                 * @return The replaced class.
+                 */
+                fun replaceClass(`class`: String): String {
+                    val prefix = prefixesToReplace.find { `class`.startsWith(it) } ?: return `class`
+                    val color = `class`.substringAfter(prefix)
+                    val lightColor = lightColors[color]
+                    val darkColor = darkColors[color]
+                    return if (lightColor != null && darkColor != null) {
+                        "$prefix$lightColor dark:$prefix$darkColor"
+                    } else `class`
+                }
+
+                return newClasses
+                    .split(" ")
+                    .filterNot { it.isEmpty() }
+                    .joinToString(" ") {
+                        val className = it.trim().split(":")
+                        if (className.size == 1) {
+                            replaceClass(className[0])
+                        } else {
+                            "${className.dropLast(1).joinToString(":")}:${replaceClass(className.last())}"
+                        }
+                    }
             }
 
-            return newClasses
-                .split(" ")
-                .filterNot { it.isEmpty() }
-                .joinToString(" ") {
-                    val className = it.trim().split(":")
-                    if (className.size == 1) {
-                        replaceClass(className[0])
-                    } else {
-                        "${className.dropLast(1).joinToString(":")}:${replaceClass(className.last())}"
-                    }
-                }
-        }
-
-        fun handleClasses(classes: String): String {
-            var newClasses = classes
-            if (!config.tailwind.cssVariables) {
+            fun handleClasses(classes: String): String {
                 val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject ?: throw Exception("Inline colors not found")
-                newClasses = variablesToUtilities(
-                    newClasses,
+                return variablesToUtilities(
+                    classes,
                     inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
                         lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
                     } ?: emptyMap(),
@@ -169,37 +129,33 @@ class ISPReactSource(private val project: Project): ISPSource {
                     } ?: emptyMap()
                 )
             }
-            if (config.tailwind.prefix.isNotEmpty()) {
-                newClasses = prefixClasses(newClasses, config.tailwind.prefix)
-            }
-            return newClasses
-        }
 
-        return Regex("className=(?:(?!>)[^\"'])*[\"']([^>]*)[\"']").replace(newContents) { result ->
-            // matches any className, and takes everything inside the first quote to the last quote found before the closing `>`
-            // if no quotes are found before the closing `>`, skips the match
-            val match = result.groupValues[0]
-            val group = result.groupValues[1]
-            match.replace(
-                group,
-                // if the group contains a quote, we assume the classes are the last quoted string in the group
-                if (group.contains("\"")) {
-                    group.substringBeforeLast('"') + "\"" + handleClasses(
-                        group.substringAfterLast('"')
-                    )
-                } else if (group.contains("'")) {
-                    group.substringBeforeLast("'") + "'" + handleClasses(
-                        group.substringAfterLast("'")
-                    )
-                } else handleClasses(group)
-            )
-        }
+            Regex("className=(?:(?!>)[^\"'])*[\"']([^>]*)[\"']").replace(newContents) { result ->
+                // matches any className, and takes everything inside the first quote to the last quote found before the closing `>`
+                // if no quotes are found before the closing `>`, skips the match
+                val match = result.groupValues[0]
+                val group = result.groupValues[1]
+                match.replace(
+                    group,
+                    // if the group contains a quote, we assume the classes are the last quoted string in the group
+                    if (group.contains("\"")) {
+                        group.substringBeforeLast('"') + "\"" + handleClasses(
+                            group.substringAfterLast('"')
+                        )
+                    } else if (group.contains("'")) {
+                        group.substringBeforeLast("'") + "'" + handleClasses(
+                            group.substringAfterLast("'")
+                        )
+                    } else handleClasses(group)
+                )
+            }
+        } else newContents
     }
 
     override fun fetchAllComponents(): List<ISPComponent> {
         val response = RequestSender.sendRequest("$domain/registry/index.json")
         return response.body?.let {
-            Json.decodeFromString<List<ReactTypes.Component>>(it)
+            Json.decodeFromString<List<SolidTypes.Component>>(it)
         }?.map { ISPComponent(it.name) } ?: emptyList()
     }
 
@@ -210,13 +166,13 @@ class ISPReactSource(private val project: Project): ISPSource {
 
     override fun getInstalledComponents(): List<String> {
         return FileManager(project).getFileAtPath(
-            resolveAlias(getLocalConfig().aliases.components) + "/" + ReactTypes.ComponentKind.UI.name.lowercase()
+            resolveAlias(getLocalConfig().aliases.components) + "/" + SolidTypes.ComponentKind.UI.name.lowercase()
         )?.children?.map { it.name }?.sorted() ?: emptyList()
     }
 
     override fun addComponent(componentName: String) {
         val installedComponents = getInstalledComponents()
-        fun getRegistryDependencies(component: ReactTypes.ComponentWithContents): List<ReactTypes.ComponentWithContents> {
+        fun getRegistryDependencies(component: SolidTypes.ComponentWithContents): List<SolidTypes.ComponentWithContents> {
             return component.registryDependencies.filter {
                 !installedComponents.contains(it)
             }.map { registryDependency ->
@@ -233,8 +189,8 @@ class ISPReactSource(private val project: Project): ISPSource {
             downloadedComponent.files.forEach { file ->
                 val path = "${resolveAlias(config.aliases.components)}/${component.type.name.lowercase()}/${downloadedComponent.name}"
                 val psiFile = PsiFileFactory.getInstance(project).createFileFromText(
-                    getConfigFileName(file.name),
-                    FileTypeManager.getInstance().getFileTypeByExtension(getConfigFileName(file.name).substringAfterLast('.')),
+                    file.name,
+                    FileTypeManager.getInstance().getFileTypeByExtension(file.name.substringAfterLast('.')),
                     adaptFileContents(file.content)
                 )
                 FileManager(project).saveFileAtPath(psiFile, path)
@@ -290,7 +246,7 @@ class ISPReactSource(private val project: Project): ISPSource {
         val remoteComponent = fetchComponent(componentName)
         return remoteComponent.files.all { file ->
             FileManager(project).getFileContentsAtPath(
-                "${resolveAlias(config.aliases.components)}/${remoteComponent.type.name.lowercase()}/${remoteComponent.name}/${getConfigFileName(file.name)}"
+                "${resolveAlias(config.aliases.components)}/${remoteComponent.type.name.lowercase()}/${remoteComponent.name}/${file.name}"
             ) == adaptFileContents(file.content)
         }
     }
@@ -303,7 +259,7 @@ class ISPReactSource(private val project: Project): ISPSource {
     }
 }
 
-object ReactTypes {
+object SolidTypes {
     /**
      * The kind of component.
      */
@@ -381,8 +337,6 @@ object ReactTypes {
         val `$schema`: String,
         val style: Styles,
         val tailwind: Tailwind,
-        val rsc: Boolean,
-        val tsx: Boolean = true,
         val aliases: Aliases
     ) {
         /**
@@ -411,8 +365,7 @@ object ReactTypes {
             val config: String,
             val css: String,
             val baseColor: String,
-            val cssVariables: Boolean,
-            val prefix: String = ""
+            val cssVariables: Boolean
         )
 
         /**
@@ -425,8 +378,7 @@ object ReactTypes {
         @Serializable
         data class Aliases(
             val components: String,
-            val utils: String,
-            val ui: String? = null
+            val utils: String
         )
     }
 }
