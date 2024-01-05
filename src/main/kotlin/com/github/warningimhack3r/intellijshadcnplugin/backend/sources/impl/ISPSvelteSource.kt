@@ -1,9 +1,12 @@
-package com.github.warningimhack3r.intellijshadcnplugin.backend.sources
+package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.ShellRunner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.ISPComponent
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.ISPSource
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.ISPStyle
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
@@ -25,10 +28,10 @@ class ISPSvelteSource(private val project: Project): ISPSource {
     override var domain = "https://www.shadcn-svelte.com"
     override var language = "Svelte"
 
-    private fun fetchComponent(componentName: String): SvelteTypes.SvelteComponentWithContents {
+    private fun fetchComponent(componentName: String): SvelteTypes.ComponentWithContents {
         val style = getLocalConfig().style
         val response = RequestSender.sendRequest("$domain/registry/styles/$style/$componentName.json")
-        return response.body?.let { Json.decodeFromString<SvelteTypes.SvelteComponentWithContents>(it) } ?: throw Exception("Component not found")
+        return response.body?.let { Json.decodeFromString<SvelteTypes.ComponentWithContents>(it) } ?: throw Exception("Component not found")
     }
 
     private fun getLocalConfig(): SvelteTypes.Config {
@@ -51,7 +54,7 @@ class ISPSvelteSource(private val project: Project): ISPSource {
             ?.jsonObject?.get(alias.substringBefore("/"))
             ?.jsonArray?.get(0)
             ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias")
-        return aliasPath.substringAfter("/").plus("/").plus(alias.substringAfter("/"))
+        return "${aliasPath.replace(Regex("^\\./"), "")}/${alias.substringAfter("/")}"
     }
 
     private fun replaceImports(contents: String): String {
@@ -68,7 +71,7 @@ class ISPSvelteSource(private val project: Project): ISPSource {
     override fun fetchAllComponents(): List<ISPComponent> {
         val response = RequestSender.sendRequest("$domain/registry/index.json")
         return response.body?.let {
-            Json.decodeFromString<List<SvelteTypes.SvelteComponent>>(it)
+            Json.decodeFromString<List<SvelteTypes.Component>>(it)
         }?.map { ISPComponent(it.name) } ?: emptyList()
     }
 
@@ -84,8 +87,11 @@ class ISPSvelteSource(private val project: Project): ISPSource {
     }
 
     override fun addComponent(componentName: String) {
-        fun getRegistryDependencies(component: SvelteTypes.SvelteComponentWithContents): List<SvelteTypes.SvelteComponentWithContents> {
-            return component.registryDependencies.map { registryDependency ->
+        val installedComponents = getInstalledComponents()
+        fun getRegistryDependencies(component: SvelteTypes.ComponentWithContents): List<SvelteTypes.ComponentWithContents> {
+            return component.registryDependencies.filter {
+                !installedComponents.contains(it)
+            }.map { registryDependency ->
                 val dependency = fetchComponent(registryDependency)
                 listOf(dependency, *getRegistryDependencies(dependency).toTypedArray())
             }.flatten()
@@ -93,7 +99,7 @@ class ISPSvelteSource(private val project: Project): ISPSource {
 
         // Install component
         val component = fetchComponent(componentName)
-        val components = listOf(component, *getRegistryDependencies(fetchComponent(componentName)).toTypedArray())
+        val components = setOf(component, *getRegistryDependencies(fetchComponent(componentName)).toTypedArray())
         val config = getLocalConfig()
         components.forEach { downloadedComponent ->
             downloadedComponent.files.forEach { file ->
@@ -190,11 +196,11 @@ object SvelteTypes {
      * @param dependencies The npm dependencies of the component.
      * @param registryDependencies The other components that this component depends on.
      * @param files The files that make up the component.
-     * @param type The kind of component (always "components:ui" for now).
+     * @param type The kind of component.
      */
     @Suppress("PROVIDED_RUNTIME_TOO_LOW") // https://github.com/Kotlin/kotlinx.serialization/issues/993#issuecomment-984742051
     @Serializable
-    data class SvelteComponent(
+    data class Component(
         val name: String,
         val dependencies: List<String>,
         val registryDependencies: List<String>,
@@ -208,11 +214,11 @@ object SvelteTypes {
      * @param dependencies The npm dependencies of the component.
      * @param registryDependencies The other components that this component depends on.
      * @param files The files that make up the component.
-     * @param type The kind of component (always "components:ui" for now).
+     * @param type The kind of component.
      */
     @Suppress("PROVIDED_RUNTIME_TOO_LOW")
     @Serializable
-    data class SvelteComponentWithContents(
+    data class ComponentWithContents(
         val name: String,
         val dependencies: List<String>,
         val registryDependencies: List<String>,
@@ -235,7 +241,7 @@ object SvelteTypes {
     /**
      * A shadcn-svelte locally installed components.json file.
      * @param `$schema` The schema URL for the file.
-     * @param style The library style installed (currently "default" or "new-york").
+     * @param style The library style installed.
      * @param tailwind The Tailwind configuration.
      * @param aliases The aliases for the components and utils directories.
      */
@@ -243,10 +249,22 @@ object SvelteTypes {
     @Serializable
     data class Config(
         val `$schema`: String,
-        val style: String,
+        val style: Styles,
         val tailwind: Tailwind,
         val aliases: Aliases
     ) {
+        /**
+         * The library style used.
+         */
+        @Suppress("PROVIDED_RUNTIME_TOO_LOW")
+        @Serializable
+        enum class Styles {
+            @SerialName("default")
+            DEFAULT,
+            @SerialName("new-york")
+            NEW_YORK
+        }
+
         /**
          * The Tailwind configuration.
          * @param config The relative path to the Tailwind config file.
