@@ -11,7 +11,6 @@ import com.intellij.openapi.project.Project
 object ISPScanner {
 
     fun findShadcnImplementation(project: Project): ISPSource? {
-        // TODO: Add other sources
         return FileManager(project).getVirtualFilesByName("components.json").firstOrNull()?.let { componentsJson ->
             val contents = componentsJson.contentsToByteArray().decodeToString()
             when {

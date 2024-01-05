@@ -6,15 +6,16 @@
 
 ## Description
 <!-- Plugin description -->
-Manage your shadcn/ui components in your project. Supports Svelte, React, Vue, Solid, and Kotlin/JS.
+Manage your shadcn/ui components in your project. Supports Svelte, React, Vue, and Solid.
 
-This plugin will help you manage your shadcn/ui components through a simple tool window. Add, remove, update them with a single click.
+This plugin will help you manage your shadcn/ui components through a simple tool window. Add, remove, update them with a single click.  
+**This plugin will only work with an existing `components.json` file. Manually copied components will not be detected otherwise.**
 
 ## Features
 - Automatically detect shadcn/ui components in your project
 - Instantly add, remove, update them with a single click
 - Refreshes on opening the tool window
-- Supports _all_ shadcn/ui implementations: Svelte, React, Vue, Solid, and even Kotlin/JS
+- Supports _all_ shadcn/ui implementations: Svelte, React, Vue, and Solid
 - Browse available components
 - Easily search for remote or existing components
 - (Soon) support monorepos
