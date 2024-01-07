@@ -5,7 +5,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.openapi.wm.ex.ToolWindowManagerListener
 
-class ISPToolWindowListener(private val project: Project) : ToolWindowManagerListener {
+class ToolWindowListener(private val project: Project) : ToolWindowManagerListener {
     private val toolWindowId = "shadcn/ui"
     private var isToolWindowOpen: Boolean? = null
 

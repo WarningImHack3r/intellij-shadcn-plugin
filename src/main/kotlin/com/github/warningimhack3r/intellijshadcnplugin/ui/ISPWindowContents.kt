@@ -1,6 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.ui
 
-import com.github.warningimhack3r.intellijshadcnplugin.backend.ISPScanner
+import com.github.warningimhack3r.intellijshadcnplugin.backend.SourceScanner
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.project.Project
@@ -51,16 +51,16 @@ class ISPWindowContents(private val project: Project) {
         // Add a component panel
         add(createPanel("Add a component") {
             GlobalScope.async {
-                val source = runReadAction { ISPScanner.findShadcnImplementation(project) }
+                val source = runReadAction { SourceScanner.findShadcnImplementation(project) }
                 if (source == null) return@async emptyList()
                 val installedComponents = runReadAction { source.getInstalledComponents() }
-                source.fetchAllComponents().map { component ->
+                runReadAction { source.fetchAllComponents() }.map { component ->
                     Item(
                         component.name,
                         component.description ?: "${component.name.replace("-", " ")
                             .replaceFirstChar {
                                 if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
-                            }} component for ${source.language}",
+                            }} component for ${source.framework}",
                         listOf(
                             LabeledAction("Add", CompletionAction.DISABLE_ROW) {
                                 runWriteAction { source.addComponent(component.name) }
@@ -80,7 +80,7 @@ class ISPWindowContents(private val project: Project) {
         // Manage components panel
         add(createPanel("Manage components") {
             GlobalScope.async {
-                val source = runReadAction { ISPScanner.findShadcnImplementation(project) }
+                val source = runReadAction { SourceScanner.findShadcnImplementation(project) }
                 if (source == null) return@async emptyList()
                 runReadAction { source.getInstalledComponents() }.map { component ->
                     Item(

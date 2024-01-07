@@ -20,18 +20,29 @@ object RequestSender {
             requestMethod = method
             doOutput = body != null
             headers?.forEach(::setRequestProperty)
-        }
-
-        if (body != null) {
-            conn.outputStream.use {
-                it.write(body.toByteArray())
+            body?.let {
+                outputStream.use {
+                    it.write(body.toByteArray())
+                }
             }
         }
 
-        val responseBody = conn.inputStream.use { it.readBytes() }.toString(Charsets.UTF_8)
+        if (conn.responseCode in 300..399) {
+            return sendRequest(conn.getHeaderField("Location"), method, mapOf(
+                "Cookie" to conn.getHeaderField("Set-Cookie")
+            ).filter { it.value != null }, body)
+        }
 
-        return Response(conn.responseCode, conn.headerFields, responseBody)
+        return Response(conn.responseCode, conn.headerFields, conn.inputStream.bufferedReader().readText())
     }
 
-    data class Response(val statusCode: Int, val headers: Map<String, List<String>>? = null, val body: String? = null)
+    data class Response(val statusCode: Int, val headers: Map<String, List<String>>, val body: String) {
+
+        fun <T> ok(action: (Response) -> T): T? {
+            if (statusCode in 200..299) {
+                return action(this)
+            }
+            return null
+        }
+    }
 }
