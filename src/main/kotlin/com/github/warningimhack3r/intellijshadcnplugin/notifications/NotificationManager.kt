@@ -5,6 +5,9 @@ import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.notification.Notifications
 import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.AppExecutorUtil
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 class NotificationManager(val project: Project? = null) {
 
@@ -22,19 +25,18 @@ class NotificationManager(val project: Project? = null) {
             actions.forEach { addAction(it) }
         }
 
-    @Suppress("UnstableApiUsage") // notifyAndHide is still experimental
     private fun sendNotification(
         notification: Notification,
         hide: Boolean = false
     ) {
+        project?.let {
+            Notifications.Bus.notify(notification, it)
+        } ?: Notifications.Bus.notify(notification)
         if (hide) {
-            project?.let {
-                Notifications.Bus.notifyAndHide(notification, it)
-            } ?: Notifications.Bus.notifyAndHide(notification)
-        } else {
-            project?.let {
-                Notifications.Bus.notify(notification, it)
-            } ?: Notifications.Bus.notify(notification)
+            // Taken from experimental Notifications.Bus.notifyAndHide
+            (AppExecutorUtil.getAppExecutorService() as ScheduledExecutorService).schedule({
+                notification.expire()
+            }, 5, TimeUnit.SECONDS)
         }
     }
 

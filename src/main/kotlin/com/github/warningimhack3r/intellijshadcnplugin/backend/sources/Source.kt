@@ -127,7 +127,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                             "Installed $dependenciesList for ${component.name}.",
                         )
                     }
-                    notif.hideBalloon()
+                    notif.expire()
                 }
             }
         }
