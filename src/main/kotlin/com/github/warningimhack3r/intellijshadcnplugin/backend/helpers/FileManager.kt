@@ -5,6 +5,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiFile
 import com.intellij.psi.search.FilenameIndex
 import com.intellij.psi.search.GlobalSearchScope
+import java.io.IOException
 import java.nio.file.NoSuchFileException
 
 class FileManager(private val project: Project) {
@@ -20,7 +21,11 @@ class FileManager(private val project: Project) {
     }
 
     fun deleteFileAtPath(path: String): Boolean {
-        return getFileAtPath(path)?.delete(this)?.let { true } ?: false
+        return try {
+            getFileAtPath(path)?.delete(this)?.let { true } ?: false
+        } catch (e: IOException) {
+            false
+        }
     }
 
     fun getVirtualFilesByName(name: String): Collection<VirtualFile> {
@@ -32,6 +37,8 @@ class FileManager(private val project: Project) {
             if (!name.startsWith(".")) {
                 !nodeModule && !file.path.substringAfter(project.basePath!!).startsWith(".")
             } else !nodeModule
+        }.sortedBy { file ->
+            name.toRegex().find(file.path)?.range?.first ?: Int.MAX_VALUE
         }
     }
 

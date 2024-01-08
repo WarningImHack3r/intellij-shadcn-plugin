@@ -14,9 +14,12 @@ import java.nio.file.NoSuchFileException
 class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.serializer()) {
     override var framework = "React"
 
+    override fun usesDirectoriesForComponents() = false
+
     override fun resolveAlias(alias: String): String {
         if (!alias.startsWith("$") && !alias.startsWith("@")) return alias
-        val tsConfig = FileManager(project).getFileContentsAtPath("tsconfig.json") ?: throw NoSuchFileException("tsconfig.json not found")
+        val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
+        val tsConfig = FileManager(project).getFileContentsAtPath(configFile) ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = Json.parseToJsonElement(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
@@ -37,23 +40,24 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
 
     override fun adaptFileToConfig(contents: String): String {
         val config = getLocalConfig()
-        // Note: this condition does not replace UI paths (= $components/$ui) by the components path
-        // if the UI alias is not set.
-        // For me, this is a bug, but I'm following what the original code does for parity
-        // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L10-L23).
-        var newContents = if (config.aliases.ui != null) {
-            contents.replace(
-                Regex("@/registry/[^/]+/ui"), cleanAlias(config.aliases.ui)
+        // Note: this does not prevent additional imports other than "cn" from being replaced,
+        // but I'm once again following what the original code does for parity
+        // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L25-L35).
+        val newContents = Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"(@/lib/cn).*").replace(
+            // Note: this condition does not replace UI paths (= $components/$ui) by the components path
+            // if the UI alias is not set.
+            // For me, this is a bug, but I'm following what the original code does for parity
+            // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L10-L23).
+            if (config.aliases.ui != null) {
+                contents.replace(
+                    Regex("@/registry/[^/]+/ui"), cleanAlias(config.aliases.ui)
+                )
+            } else contents.replace(
+                Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
             )
-        } else contents.replace(
-            Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
-        )
-        newContents = newContents.replace(
-            // Note: this does not prevent additional imports other than "cn" from being replaced,
-            // but I'm once again following what the original code does for parity
-            // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L25-L35).
-            Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"@/lib/utils"), config.aliases.utils
-        ).applyIf(config.rsc) {
+        ) { result ->
+            result.groupValues[0].replace(result.groupValues[1], config.aliases.utils)
+        }.applyIf(config.rsc) {
             replace(
                 Regex("\"use client\";*\n"), ""
             )

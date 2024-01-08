@@ -16,7 +16,8 @@ object SourceScanner {
             when {
                 contents.contains("shadcn-svelte.com") -> SvelteSource(project)
                 contents.contains("ui.shadcn.com") -> ReactSource(project)
-                contents.contains("shadcn-vue.com") -> VueSource(project)
+                contents.contains("shadcn-vue.com")
+                        || contents.contains("\"framework\": \"") -> VueSource(project)
                 contents.contains("shadcn-solid") -> SolidSource(project)
                 else -> null
             }

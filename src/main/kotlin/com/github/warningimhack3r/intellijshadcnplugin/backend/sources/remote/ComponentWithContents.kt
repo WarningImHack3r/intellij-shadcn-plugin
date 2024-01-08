@@ -14,8 +14,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ComponentWithContents(
     val name: String,
-    val dependencies: List<String>,
-    val registryDependencies: List<String>,
+    val dependencies: List<String> = emptyList(),
+    val registryDependencies: List<String> = emptyList(),
     val files: List<File>,
     val type: String
 ) {

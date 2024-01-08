@@ -14,6 +14,8 @@ import java.nio.file.NoSuchFileException
 class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfig.serializer()) {
     override var framework = "Svelte"
 
+    override fun usesDirectoriesForComponents() = true
+
     override fun resolveAlias(alias: String): String {
         if (!alias.startsWith("$") && !alias.startsWith("@")) return alias
         var tsConfig = FileManager(project).getFileContentsAtPath(".svelte-kit/tsconfig.json")

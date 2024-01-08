@@ -15,7 +15,7 @@ import kotlinx.serialization.Serializable
 @Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117")
 @Serializable
 class VueConfig(
-    override val `$schema`: String,
+    override val `$schema`: String = "https://shadcn-vue.com/schema.json",
     override val style: String,
     val typescript: Boolean = true,
     override val tailwind: Tailwind,

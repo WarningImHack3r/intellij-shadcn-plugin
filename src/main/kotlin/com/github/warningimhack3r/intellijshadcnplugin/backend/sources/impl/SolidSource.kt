@@ -13,29 +13,32 @@ import java.nio.file.NoSuchFileException
 class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.serializer()) {
     override var framework = "Solid"
 
+    override fun usesDirectoriesForComponents() = false
+
     override fun resolveAlias(alias: String): String {
         if (!alias.startsWith("$") && !alias.startsWith("@")) return alias
-        val tsConfig = FileManager(project).getFileContentsAtPath("tsconfig.json") ?: throw NoSuchFileException("tsconfig.json not found")
+        val configFile = "tsconfig.json"
+        val tsConfig = FileManager(project).getFileContentsAtPath(configFile) ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = Json.parseToJsonElement(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get("${alias.substringBefore("/")}/*")
             ?.jsonArray?.get(0)
             ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias")
-        return aliasPath.replace(Regex("^\\./"), "")
+        return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/"))
     }
 
     override fun adaptFileToConfig(contents: String): String {
         val config = getLocalConfig()
-        val newContents = contents.replace(
-            Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
-        ).replace(
-            // Note: this does not prevent additional imports other than "cn" from being replaced,
-            // but I'm following what the original code does for parity
-            // (https://github.com/hngngn/shadcn-solid/blob/b808e0ecc9fd4689572d9fc0dfb7af81606a11f2/packages/cli/src/utils/transformers/transform-import.ts#L20-L29).
-            Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"@/lib/cn"), config.aliases.utils
-        )
+        // Note: this does not prevent additional imports other than "cn" from being replaced,
+        // but I'm following what the original code does for parity
+        // (https://github.com/hngngn/shadcn-solid/blob/b808e0ecc9fd4689572d9fc0dfb7af81606a11f2/packages/cli/src/utils/transformers/transform-import.ts#L20-L29).
+        val newContents = Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"(@/lib/cn).*").replace(
+            contents.replace(
+                Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
+            )
+        ) { it.groupValues[0].replace(it.groupValues[1], config.aliases.utils) }
 
         return if (!config.tailwind.cssVariables) {
             /**

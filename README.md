@@ -9,7 +9,6 @@
 - Rework `class`es replacement detection mechanism to be 100% accurate
   - Add tests for this
 - Add support for Vue's `typescript` option (transpiling TypeScript to JavaScript in `*.vue` files)
-- Parse `vite.config.(js|ts)` to resolve aliases as a fallback of `tsconfig.json`
 
 ## Description
 
@@ -38,7 +37,9 @@ If you don't see the tool window, you can open it from `View > Tool Windows > sh
 
 ## Planned Features
 
+- Parse `vite.config.(js|ts)` (and others like `nuxt.config.ts`) to resolve aliases as a fallback of `tsconfig.json`
 - Figure out a clean way to refresh the tool window automatically after adding or removing components
+- Refresh/recreate the tool window automatically when the project finishes indexing
 - Add support for monorepos
 <!-- Plugin description end -->
 
