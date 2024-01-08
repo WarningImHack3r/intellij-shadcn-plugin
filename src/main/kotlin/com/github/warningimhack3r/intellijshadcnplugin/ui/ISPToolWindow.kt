@@ -1,5 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.ui
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.SourceScanner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.runReadAction
@@ -15,7 +16,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.future.asCompletableFuture
 import javax.swing.SwingConstants
 
-class ISPToolWindow: ToolWindowFactory {
+class ISPToolWindow : ToolWindowFactory {
     override fun init(toolWindow: ToolWindow) {
         ApplicationManager.getApplication().invokeLater {
             toolWindow.setIcon(ISPIcons.logo)
@@ -27,11 +28,15 @@ class ISPToolWindow: ToolWindowFactory {
         with(toolWindow.contentManager) {
             addContent(factory.createContent(SimpleToolWindowPanel(true).apply {
                 GlobalScope.async {
-                    return@async runReadAction {
-                        FileManager(project).getVirtualFilesByName("package.json").size
-                    }
-                }.asCompletableFuture().thenApplyAsync { count ->
-                    if (count > 1) {
+                    return@async Pair(runReadAction {
+                        SourceScanner.findShadcnImplementation(project)
+                    } != null, runReadAction {
+                        FileManager(project).getVirtualFilesByName("package.json")
+                    }.size)
+                }.asCompletableFuture().thenApplyAsync { (hasShadcn, count) ->
+                    if (!hasShadcn) {
+                        add(JBLabel("No shadcn/ui implementation detected.", SwingConstants.CENTER))
+                    } else if (count > 1) {
                         add(JBLabel("Multiple projects detected, not supported yet.", SwingConstants.CENTER))
                     } else {
                         add(ISPWindowContents(project).panel())

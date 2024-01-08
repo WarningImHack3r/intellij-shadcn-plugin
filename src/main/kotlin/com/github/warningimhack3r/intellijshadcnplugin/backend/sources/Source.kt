@@ -29,7 +29,11 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     // Utility methods
     protected fun getLocalConfig(): C {
         return FileManager(project).getFileContentsAtPath("components.json")?.let {
-            Json.decodeFromString(serializer, it)
+            try {
+                Json.decodeFromString(serializer, it)
+            } catch (e: Exception) {
+                throw UnparseableConfigException(project, "Unable to parse components.json", e)
+            }
         } ?: throw NoSuchFileException("components.json not found")
     }
 
