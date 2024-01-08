@@ -4,7 +4,15 @@
 [![Version](https://img.shields.io/jetbrains/plugin/v/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/com.github.warningimhack3r.intellijshadcnplugin)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/com.github.warningimhack3r.intellijshadcnplugin)
 
+## ToDo list before 1.0.0
+
+- Rework `class`es replacement detection mechanism to be 100% accurate
+  - Add tests for this
+- Add support for Vue's `typescript` option (transpiling TypeScript to JavaScript in `*.vue` files)
+- Parse `vite.config.(js|ts)` to resolve aliases as a fallback of `tsconfig.json`
+
 ## Description
+
 <!-- Plugin description -->
 Manage your shadcn/ui components in your project. Supports Svelte, React, Vue, and Solid.
 
@@ -12,6 +20,7 @@ This plugin will help you manage your shadcn/ui components through a simple tool
 **This plugin will only work with an existing `components.json` file. Manually copied components will not be detected otherwise.**
 
 ## Features
+
 - Automatically detect shadcn/ui components in your project
 - Instantly add, remove, update them with a single click
 - Refreshes on opening the tool window
@@ -22,10 +31,14 @@ This plugin will help you manage your shadcn/ui components through a simple tool
 - ...and more!
 
 ## Usage
+
 Simply open the `shadcn/ui` tool window and start managing your components.  
-If you don't see the tool window, you can open it from `View > Tool Windows > shadcn/ui`.
+If you don't see the tool window, you can open it from `View > Tool Windows > shadcn/ui`.  
+**When adding or removing components, the tool window won't refresh automatically yet. You can refresh it by closing and reopening it.**
 
 ## Planned Features
+
+- Figure out a clean way to refresh the tool window automatically after adding or removing components
 - Add support for monorepos
 <!-- Plugin description end -->
 

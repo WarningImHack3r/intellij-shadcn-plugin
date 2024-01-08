@@ -27,12 +27,6 @@ class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.s
     }
 
     override fun adaptFileToConfig(contents: String): String {
-        fun cleanAlias(alias: String): String {
-            return if (alias.startsWith("\$")) {
-                "\\$alias" // fixes Kotlin silently crashing when the replacement starts with $ with a regex
-            } else alias
-        }
-
         val config = getLocalConfig()
         val newContents = contents.replace(
             Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
@@ -54,7 +48,7 @@ class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.s
             fun variablesToUtilities(classes: String, lightColors: Map<String, String>, darkColors: Map<String, String>): String {
                 // Note: this does not include `border` classes at the beginning or end of the string,
                 // but I'm once again following what the original code does for parity
-                // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-css-vars.ts#L142-L145).
+                // (https://github.com/hngngn/shadcn-solid/blob/b808e0ecc9fd4689572d9fc0dfb7af81606a11f2/packages/cli/src/utils/transformers/transform-css-vars.ts#L144-L147).
                 val newClasses = classes.replace(" border ", " border border-border ")
 
                 val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")

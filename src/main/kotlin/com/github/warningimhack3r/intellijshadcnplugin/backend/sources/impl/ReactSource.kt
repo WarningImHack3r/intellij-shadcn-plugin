@@ -22,8 +22,8 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get("${alias.substringBefore("/")}/*")
             ?.jsonArray?.get(0)
-            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias") // TODO: fallback to vite.config.(j|t)s for all
-        return aliasPath.replace(Regex("^\\./"), "")
+            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias")
+        return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/"))
     }
 

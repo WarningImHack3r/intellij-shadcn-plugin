@@ -3,6 +3,8 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.VueConfig
+import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.project.Project
 import com.intellij.util.applyIf
 import kotlinx.serialization.json.Json
@@ -37,22 +39,21 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
     }
 
     override fun adaptFileToConfig(contents: String): String {
-        fun cleanAlias(alias: String): String {
-            return if (alias.startsWith("\$")) {
-                "\\$alias" // fixes Kotlin silently crashing when the replacement starts with $ with a regex
-            } else alias
-        }
-
         val config = getLocalConfig()
         val newContents = contents.replace(
             Regex("@/lib/registry/[^/]+"), cleanAlias(config.aliases.components)
         ).replace(
             // Note: this does not prevent additional imports other than "cn" from being replaced,
-            // but I'm once again following what the original code does for parity
+            // but I'm following what the original code does for parity
             // (https://github.com/radix-vue/shadcn-vue/blob/9d9a6f929ce0f281b4af36161af80ed2bbdc4a16/packages/cli/src/utils/transformers/transform-import.ts#L19-L29).
             Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"@/lib/utils"),
             cleanAlias(config.aliases.utils)
         ).applyIf(!config.typescript) {
+            NotificationManager(project).sendNotification(
+                "TypeScript option for Vue",
+                "You have TypeScript disabled in your shadcn/ui config. This feature is not supported yet. Please install/update your components with the CLI for now.",
+                NotificationType.WARNING
+            )
             // TODO: detype Vue file
             this
         }
@@ -67,7 +68,7 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             fun variablesToUtilities(classes: String, lightColors: Map<String, String>, darkColors: Map<String, String>): String {
                 // Note: this does not include `border` classes at the beginning or end of the string,
                 // but I'm once again following what the original code does for parity
-                // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-css-vars.ts#L142-L145).
+                // (https://github.com/radix-vue/shadcn-vue/blob/4214134e1834fdabcc5f0354e11593360f076e8d/packages/cli/src/utils/transformers/transform-css-vars.ts#L87-L89).
                 val newClasses = classes.replace(" border ", " border border-border ")
 
                 val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
