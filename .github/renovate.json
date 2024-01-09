@@ -8,6 +8,16 @@
 			"matchManagers": ["github-actions", "gradle"],
 			"groupName": "{{manager}}",
 			"addLabels": ["{{manager}}"]
+		},
+		{
+			"matchManagers": ["gradle"],
+			"matchPackagePatterns": [".*plugin.serialization.*"],
+			"enabled": false
+		},
+		{
+			"matchManagers": ["gradle"],
+			"matchPackageNames": ["org.jetbrains.qodana:org.jetbrains.qodana.gradle.plugin"],
+			"allowedVersions": "!/^2023/"
 		}
 	]
 }
