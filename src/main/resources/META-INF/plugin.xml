@@ -15,7 +15,7 @@
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow
                 id="shadcn/ui"
-                icon="ISPIcons.logo"
+                icon="/icons/shadcn.svg"
                 anchor="right"
                 factoryClass="com.github.warningimhack3r.intellijshadcnplugin.ui.ISPToolWindow" />
         <notificationGroup

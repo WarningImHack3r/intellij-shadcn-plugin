@@ -6,12 +6,13 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl.Reac
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl.SolidSource
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl.SvelteSource
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl.VueSource
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 
 object SourceScanner {
 
     fun findShadcnImplementation(project: Project): Source<*>? {
-        return FileManager(project).getVirtualFilesByName("components.json").firstOrNull()?.let { componentsJson ->
+        return FileManager(project).getFileAtPath("components.json")?.let { componentsJson ->
             val contents = componentsJson.contentsToByteArray().decodeToString()
             when {
                 contents.contains("shadcn-svelte.com") -> SvelteSource(project)
@@ -21,6 +22,10 @@ object SourceScanner {
                 contents.contains("shadcn-solid") -> SolidSource(project)
                 else -> null
             }
+        }.also {
+            val log = logger<SourceScanner>()
+            if (it == null) log.warn("No shadcn implementation found")
+            else log.info("Found shadcn implementation: ${it.javaClass.name}")
         }
     }
 }

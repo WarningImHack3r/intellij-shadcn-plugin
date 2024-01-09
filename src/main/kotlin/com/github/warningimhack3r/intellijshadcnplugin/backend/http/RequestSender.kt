@@ -1,10 +1,12 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.http
 
+import com.intellij.openapi.diagnostic.logger
 import java.net.HttpURLConnection
 import java.net.URL
 
 // Credit to: https://gist.github.com/GrzegorzDyrda/be47602fc855a52fba240dd2c2adc2d5
 object RequestSender {
+    private val log = logger<RequestSender>()
 
     /**
      * Sends an HTTP request to the given [url], using the given HTTP [method]. The request can also
@@ -28,6 +30,7 @@ object RequestSender {
         }
 
         if (conn.responseCode in 300..399) {
+            log.debug("Redirecting from ${conn.url} to ${conn.getHeaderField("Location")}")
             return sendRequest(conn.getHeaderField("Location"), method, mapOf(
                 "Cookie" to conn.getHeaderField("Set-Cookie")
             ).filter { it.value != null }, body)

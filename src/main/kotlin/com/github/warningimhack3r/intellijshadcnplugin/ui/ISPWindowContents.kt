@@ -3,6 +3,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.ui
 import com.github.warningimhack3r.intellijshadcnplugin.backend.SourceScanner
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
@@ -25,6 +26,8 @@ import javax.swing.border.MatteBorder
 import javax.swing.border.TitledBorder
 
 class ISPWindowContents(private val project: Project) {
+    private val log = logger<ISPWindowContents>()
+
     data class Item(
         val title: String,
         val subtitle: String?,
@@ -52,7 +55,7 @@ class ISPWindowContents(private val project: Project) {
         add(createPanel("Add a component") {
             GlobalScope.async {
                 val source = runReadAction { SourceScanner.findShadcnImplementation(project) }
-                if (source == null) return@async emptyList()
+                if (source == null) return@async emptyList<Item>().also { log.error("No source found for panel 1") }
                 val installedComponents = runReadAction { source.getInstalledComponents() }
                 runReadAction { source.fetchAllComponents() }.map { component ->
                     Item(
@@ -68,6 +71,8 @@ class ISPWindowContents(private val project: Project) {
                         ),
                         installedComponents.contains(component.name)
                     )
+                }.also {
+                    log.info("Fetched and rendering ${it.size} remote components: ${it.joinToString(", ") { component -> component.title }}")
                 }
             }.asCompletableFuture()
         }.apply {
@@ -81,7 +86,7 @@ class ISPWindowContents(private val project: Project) {
         add(createPanel("Manage components") {
             GlobalScope.async {
                 val source = runReadAction { SourceScanner.findShadcnImplementation(project) }
-                if (source == null) return@async emptyList()
+                if (source == null) return@async emptyList<Item>().also { log.error("No source found for panel 2") }
                 runReadAction { source.getInstalledComponents() }.map { component ->
                     Item(
                         component,
@@ -97,11 +102,15 @@ class ISPWindowContents(private val project: Project) {
                             }
                         )
                     )
+                }.also {
+                    log.info("Fetched and rendering ${it.size} installed components: ${it.joinToString(", ") { component -> component.title }}")
                 }
             }.asCompletableFuture()
         }.apply {
             border = JBUI.Borders.emptyTop(10)
         })
+
+        log.info("Successfully created initial panel")
     }
 
     private fun createPanel(title: String, listContents: () -> CompletableFuture<List<Item>>) = JPanel().apply panel@ {
@@ -139,6 +148,7 @@ class ISPWindowContents(private val project: Project) {
         listContents()
             .thenApplyAsync {
                 items = it
+                log.info("Rendering ${it.size} items for panel $title")
                 titledBorder.title = "$title (${it.size})"
                 scrollPane = componentsList(items)
                 add(scrollPane)

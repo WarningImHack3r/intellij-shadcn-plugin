@@ -8,6 +8,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Co
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFileFactory
@@ -20,19 +21,26 @@ import java.net.URI
 import java.nio.file.NoSuchFileException
 
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
+    private val log = logger<Source<*>>()
     abstract var framework: String
     private val domain: String
         get() = URI(getLocalConfig().`$schema`).let { uri ->
-            "${uri.scheme}://${uri.host}"
+            "${uri.scheme}://${uri.host}".also {
+                log.debug("Parsed domain: $it")
+            }
         }
 
     // Utility methods
     protected fun getLocalConfig(): C {
         val file = "components.json"
         return FileManager(project).getFileContentsAtPath(file)?.let {
+            log.debug("Parsing config from $file")
             try {
-                Json.decodeFromString(serializer, it)
+                Json.decodeFromString(serializer, it).also { config ->
+                    log.debug("Parsed config: ${config.javaClass.name}")
+                }
             } catch (e: Exception) {
+                log.error("Unable to parse $file", e)
                 throw UnparseableConfigException(project, "Unable to parse $file", e)
             }
         } ?: throw NoSuchFileException("$file not found")
@@ -53,14 +61,18 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     private fun fetchComponent(componentName: String): ComponentWithContents {
         val style = getLocalConfig().style
         val response = RequestSender.sendRequest("$domain/registry/styles/$style/$componentName.json")
-        return response.ok { Json.decodeFromString(it.body) } ?: throw Exception("Component not found")
+        return response.ok { Json.decodeFromString(it.body) } ?: throw Exception("Component not found").also {
+            log.error("Unable to fetch component $componentName", it)
+        }
     }
 
     protected fun fetchColors(): JsonElement {
         val baseColor = getLocalConfig().tailwind.baseColor
         return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
             Json.parseToJsonElement(it.body)
-        } ?: throw Exception("Colors not found")
+        } ?: throw Exception("Colors not found").also {
+            log.error("Unable to fetch colors", it)
+        }
     }
 
     protected open fun getRegistryDependencies(component: ComponentWithContents): List<ComponentWithContents> {
@@ -74,7 +86,11 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     open fun fetchAllComponents(): List<ISPComponent> {
         return RequestSender.sendRequest("$domain/registry/index.json").ok {
             Json.decodeFromString<List<Component>>(it.body)
-        }?.map { ISPComponent(it.name) } ?: emptyList()
+        }?.map { ISPComponent(it.name) }?.also {
+            log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
+        } ?: emptyList<ISPComponent>().also {
+            log.error("Unable to fetch remote components")
+        }
     }
 
     open fun getInstalledComponents(): List<String> {
@@ -82,16 +98,23 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             "${resolveAlias(getLocalConfig().aliases.components)}/ui"
         )?.children?.map { file ->
             if (file.isDirectory) file.name else file.name.substringBeforeLast(".")
-        }?.sorted() ?: emptyList()
+        }?.sorted()?.also {
+            log.info("Fetched ${it.size} installed components: ${it.joinToString(", ")}")
+        } ?: emptyList<String>().also {
+            log.error("Unable to fetch installed components")
+        }
     }
 
     open fun addComponent(componentName: String) {
         // Install component
         val component = fetchComponent(componentName)
         val installedComponents = getInstalledComponents()
+        log.debug("Installing ${component.name} (installed: ${installedComponents.joinToString(", ")})")
         setOf(component, *getRegistryDependencies(component).filter {
             !installedComponents.contains(it.name)
-        }.toTypedArray<ComponentWithContents>()).forEach { downloadedComponent ->
+        }.toTypedArray<ComponentWithContents>()).also {
+            log.debug("Installing ${it.size} components: ${it.joinToString(", ") { component -> component.name }}")
+        }.forEach { downloadedComponent ->
             downloadedComponent.files.forEach { file ->
                 val psiFile = PsiFileFactory.getInstance(project).createFileFromText(
                     adaptFileExtensionToConfig(file.name),
@@ -113,6 +136,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             !depsManager.isDependencyInstalled(dependency)
         }
         if (depsToInstall.isEmpty()) return
+        log.debug("Installing ${depsToInstall.size} dependencies: ${depsToInstall.joinToString(", ") { dependency -> dependency }}")
         val dependenciesList = with(depsToInstall) {
             if (size == 1) first() else {
                 "${dropLast(1).joinToString(", ")} and ${last()}"
@@ -145,11 +169,13 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     open fun isComponentUpToDate(componentName: String): Boolean {
         val remoteComponent = fetchComponent(componentName)
         return remoteComponent.files.all { file ->
-            FileManager(project).getFileContentsAtPath(
+            (FileManager(project).getFileContentsAtPath(
                 "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${if (usesDirectoriesForComponents()) {
                     "/${remoteComponent.name}"
                 } else ""}/${file.name}"
-            ) == adaptFileToConfig(file.content)
+            ) == adaptFileToConfig(file.content)).also {
+                log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
+            }
         }
     }
 

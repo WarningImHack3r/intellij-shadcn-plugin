@@ -6,6 +6,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Vu
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.util.applyIf
 import kotlinx.serialization.json.Json
@@ -15,12 +16,15 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
 class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
+    private val log = logger<VueSource>()
     override var framework = "Vue"
 
     override fun usesDirectoriesForComponents() = true
 
     override fun resolveAlias(alias: String): String {
-        if (!alias.startsWith("$") && !alias.startsWith("@")) return alias
+        if (!alias.startsWith("$") && !alias.startsWith("@")) return alias.also {
+            log.debug("Alias $alias does not start with $ or @, returning it as-is")
+        }
 
         fun resolvePath(configFile: String): String? {
             return Json.parseToJsonElement(configFile
@@ -41,12 +45,18 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             else -> "tsconfig.json"
         }.let { if (!config.typescript) "jsconfig.json" else it }
 
-        val tsConfig = FileManager(project).getFileContentsAtPath(tsConfigLocation) ?: throw NoSuchFileException("$tsConfigLocation not found")
+        val tsConfig = FileManager(project).getFileContentsAtPath(tsConfigLocation) ?: throw NoSuchFileException("$tsConfigLocation not found").also {
+            log.error("Failed to get $tsConfigLocation, throwing exception")
+        }
         val aliasPath = (resolvePath(tsConfig) ?: if (config.typescript) {
             resolvePath("tsconfig.app.json")
-        } else null) ?: throw Exception("Cannot find alias $alias")
+        } else null) ?: throw Exception("Cannot find alias $alias").also {
+            log.error("Failed to find alias $alias in $tsConfig, throwing exception")
+        }
         return aliasPath.replace(Regex("^\\.+/"), "")
-            .replace(Regex("\\*$"), alias.substringAfter("/"))
+            .replace(Regex("\\*$"), alias.substringAfter("/")).also {
+                log.debug("Resolved alias $alias to $it")
+            }
     }
 
     override fun adaptFileExtensionToConfig(extension: String): String {
