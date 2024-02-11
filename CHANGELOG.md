@@ -25,5 +25,12 @@
 - Improve tool window appearance
 - Improve implementation detection accuracy
 
+## [0.7.0] - 2024-01-09
+
+### Added
+
+- Initial release
+
 [Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.1...HEAD
-[0.7.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.1
+[0.7.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.0...v0.7.1
+[0.7.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.0
