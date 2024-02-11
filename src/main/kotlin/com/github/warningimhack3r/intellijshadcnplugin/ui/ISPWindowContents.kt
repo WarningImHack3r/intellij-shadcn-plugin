@@ -161,6 +161,7 @@ class ISPWindowContents(private val project: Project) {
             rows.forEach { row ->
                 add(createRow(row))
             }
+            add(JPanel())
         })
     }
 

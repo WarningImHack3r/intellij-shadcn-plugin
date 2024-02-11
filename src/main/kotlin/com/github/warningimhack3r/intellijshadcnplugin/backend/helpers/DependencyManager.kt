@@ -49,14 +49,15 @@ class DependencyManager(private val project: Project) {
 
     fun isDependencyInstalled(dependency: String): Boolean {
         // Read the package.json file
-        return FileManager(project).getFileAtPath("package.json")?.let { packageJson ->
-            val contents = packageJson.contentsToByteArray().decodeToString()
-            Json.parseToJsonElement(contents).jsonObject.filter {
+        return FileManager(project).getFileContentsAtPath("package.json")?.let { packageJson ->
+            Json.parseToJsonElement(packageJson).jsonObject.filter {
                 it.key == "dependencies" || it.key == "devDependencies"
             }.map { it.value.jsonObject.keys }.flatten().also {
                 logger<DependencyManager>().debug("Installed dependencies: $it, is $dependency installed? ${it.contains(dependency)}")
             }.contains(dependency)
             // Check if the dependency is installed
-        } ?: false
+        } ?: false.also {
+            logger<DependencyManager>().error("package.json not found, returning false")
+        }
     }
 }

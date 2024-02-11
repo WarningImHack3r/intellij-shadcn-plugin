@@ -1,5 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.ShellRunner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
@@ -24,10 +25,14 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
         if (!alias.startsWith("$") && !alias.startsWith("@")) return alias.also {
             log.debug("Alias $alias does not start with $ or @, returning it as-is")
         }
-        val configFile = ".svelte-kit/tsconfig.json"
+        val usesKit = DependencyManager(project).isDependencyInstalled("@sveltejs/kit")
+        val configFile = if (usesKit) ".svelte-kit/tsconfig.json" else "tsconfig.json"
         val fileManager = FileManager(project)
         var tsConfig = fileManager.getFileContentsAtPath(configFile)
         if (tsConfig == null) {
+            if (!usesKit) throw NoSuchFileException("Cannot get $configFile").also {
+                log.error("Failed to get $configFile, throwing exception")
+            }
             val res = ShellRunner(project).execute(arrayOf("npx", "svelte-kit", "sync"))
             if (res == null) {
                 NotificationManager(project).sendNotification(

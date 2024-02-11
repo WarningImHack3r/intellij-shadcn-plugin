@@ -6,6 +6,14 @@
 
     <depends>com.intellij.modules.platform</depends>
 
+    <actions>
+        <action id="com.github.warningimhack3r.npmupdatedependencies.errorsubmitter.ErrorThrowingAction"
+                class="com.github.warningimhack3r.intellijshadcnplugin.errorsubmitter.ErrorThrowingAction"
+                text="[shadcn/ui Debug] Throw an Error"
+                description="[shadcn/ui Debug] Try out the error handler"
+                icon="AllIcons.Debugger.Db_exception_breakpoint" />
+    </actions>
+
     <projectListeners>
         <listener
                 class="com.github.warningimhack3r.intellijshadcnplugin.listeners.ToolWindowListener"
@@ -21,5 +29,7 @@
         <notificationGroup
                 id="shadcn/ui"
                 displayType="STICKY_BALLOON" />
+        <errorHandler
+                implementation="com.github.warningimhack3r.intellijshadcnplugin.errorsubmitter.GitHubErrorReportSubmitter" />
     </extensions>
 </idea-plugin>

@@ -21,7 +21,7 @@ import java.net.URI
 import java.nio.file.NoSuchFileException
 
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
-    private val log = logger<Source<*>>()
+    private val log = logger<Source<C>>()
     abstract var framework: String
     private val domain: String
         get() = URI(getLocalConfig().`$schema`).let { uri ->

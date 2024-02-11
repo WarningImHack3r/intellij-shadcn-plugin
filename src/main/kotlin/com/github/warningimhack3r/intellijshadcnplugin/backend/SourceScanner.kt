@@ -8,18 +8,23 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl.Svel
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl.VueSource
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 object SourceScanner {
 
     fun findShadcnImplementation(project: Project): Source<*>? {
-        return FileManager(project).getFileAtPath("components.json")?.let { componentsJson ->
-            val contents = componentsJson.contentsToByteArray().decodeToString()
+        return FileManager(project).getFileContentsAtPath("components.json")?.let { componentsJson ->
+            val contents = Json.parseToJsonElement(componentsJson).jsonObject
+            val schema = contents["\$schema"]?.jsonPrimitive?.content ?: ""
             when {
-                contents.contains("shadcn-svelte.com") -> SvelteSource(project)
-                contents.contains("ui.shadcn.com") -> ReactSource(project)
-                contents.contains("shadcn-vue.com")
-                        || contents.contains("\"framework\": \"") -> VueSource(project)
-                contents.contains("shadcn-solid") -> SolidSource(project)
+                schema.contains("shadcn-svelte.com") -> SvelteSource(project)
+                schema.contains("ui.shadcn.com") -> ReactSource(project)
+                schema.contains("shadcn-vue.com")
+                        || contents.keys.contains("framework") -> VueSource(project)
+                schema.contains("shadcn-solid")
+                        || schema.contains("solid-ui.com") -> SolidSource(project)
                 else -> null
             }
         }.also {
