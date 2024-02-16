@@ -7,7 +7,7 @@
     <depends>com.intellij.modules.platform</depends>
 
     <actions>
-        <action id="com.github.warningimhack3r.npmupdatedependencies.errorsubmitter.ErrorThrowingAction"
+        <action id="com.github.warningimhack3r.intellijshadcnplugin.errorsubmitter.ErrorThrowingAction"
                 class="com.github.warningimhack3r.intellijshadcnplugin.errorsubmitter.ErrorThrowingAction"
                 text="[shadcn/ui Debug] Throw an Error"
                 description="[shadcn/ui Debug] Try out the error handler"
