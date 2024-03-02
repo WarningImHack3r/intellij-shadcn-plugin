@@ -1,6 +1,7 @@
 package com.github.warningimhack3r.intellijshadcnplugin.ui
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.SourceScanner
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
@@ -8,9 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
-import kotlinx.coroutines.DelicateCoroutinesApi
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
 import java.awt.BorderLayout
 import java.awt.Color
@@ -47,68 +46,78 @@ class ISPWindowContents(private val project: Project) {
         DISABLE_ROW
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     fun panel() = JPanel(GridLayout(0, 1)).apply {
         border = JBUI.Borders.empty(10)
 
-        // Add a component panel
-        add(createPanel("Add a component") {
-            GlobalScope.async {
-                val source = runReadAction { SourceScanner.findShadcnImplementation(project) }
-                if (source == null) return@async emptyList<Item>().also { log.error("No source found for panel 1") }
-                val installedComponents = runReadAction { source.getInstalledComponents() }
-                runReadAction { source.fetchAllComponents() }.map { component ->
-                    Item(
-                        component.name,
-                        component.description ?: "${component.name.replace("-", " ")
-                            .replaceFirstChar {
-                                if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
-                            }} component for ${source.framework}",
-                        listOf(
-                            LabeledAction("Add", CompletionAction.DISABLE_ROW) {
-                                runWriteAction { source.addComponent(component.name) }
-                            }
-                        ),
-                        installedComponents.contains(component.name)
-                    )
-                }.also {
-                    log.info("Fetched and rendering ${it.size} remote components: ${it.joinToString(", ") { component -> component.title }}")
-                }
-            }.asCompletableFuture()
-        }.apply {
-            border = BorderFactory.createCompoundBorder(
-                BorderFactory.createMatteBorder(0, 0, 1, 0, JBUI.CurrentTheme.ToolWindow.borderColor()),
-                JBUI.Borders.emptyBottom(10)
-            )
-        })
-
-        // Manage components panel
-        add(createPanel("Manage components") {
-            GlobalScope.async {
-                val source = runReadAction { SourceScanner.findShadcnImplementation(project) }
-                if (source == null) return@async emptyList<Item>().also { log.error("No source found for panel 2") }
-                runReadAction { source.getInstalledComponents() }.map { component ->
-                    Item(
-                        component,
-                        null,
-                        listOfNotNull(
-                            LabeledAction("Update", CompletionAction.REMOVE_TRIGGER) {
-                                runWriteAction { source.addComponent(component) }
-                            }.takeIf {
-                                runReadAction { !source.isComponentUpToDate(component) }
-                            },
-                            LabeledAction("Remove", CompletionAction.REMOVE_ROW) {
-                                runWriteAction { source.removeComponent(component) }
-                            }
+        val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        var source: Source<*>? = null
+        var installedComponents = emptyList<String>()
+        coroutineScope.launch {
+            source = runReadAction { SourceScanner.findShadcnImplementation(project) }
+            if (source == null) {
+                log.error("No shadcn/ui source found")
+                throw IllegalStateException("No shadcn/ui source found")
+            }
+            installedComponents = runReadAction { source!!.getInstalledComponents() }
+        }.invokeOnCompletion { throwable ->
+            if (throwable != null && throwable !is CancellationException) {
+                log.error("Failed to fetch source and installed components", throwable)
+                return@invokeOnCompletion
+            }
+            // Add a component panel
+            add(createPanel("Add a component") {
+                coroutineScope.async {
+                    runReadAction { source!!.fetchAllComponents() }.map { component ->
+                        Item(
+                            component.name,
+                            "${component.name.replace("-", " ")
+                                .replaceFirstChar {
+                                    if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
+                                }} component for ${source!!.framework}",
+                            listOf(
+                                LabeledAction("Add", CompletionAction.DISABLE_ROW) {
+                                    runWriteAction { source!!.addComponent(component.name) }
+                                }
+                            ),
+                            installedComponents.contains(component.name)
                         )
-                    )
-                }.also {
-                    log.info("Fetched and rendering ${it.size} installed components: ${it.joinToString(", ") { component -> component.title }}")
-                }
-            }.asCompletableFuture()
-        }.apply {
-            border = JBUI.Borders.emptyTop(10)
-        })
+                    }.also {
+                        log.info("Fetched and rendering ${it.size} remote components: ${it.joinToString(", ") { component -> component.title }}")
+                    }
+                }.asCompletableFuture()
+            }.apply {
+                border = BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, JBUI.CurrentTheme.ToolWindow.borderColor()),
+                    JBUI.Borders.emptyBottom(10)
+                )
+            })
+
+            // Manage components panel
+            add(createPanel("Manage components") {
+                coroutineScope.async {
+                    installedComponents.map { component ->
+                        Item(
+                            component,
+                            null,
+                            listOfNotNull(
+                                LabeledAction("Update", CompletionAction.REMOVE_TRIGGER) {
+                                    runWriteAction { source!!.addComponent(component) }
+                                }.takeIf {
+                                    runReadAction { !source!!.isComponentUpToDate(component) }
+                                },
+                                LabeledAction("Remove", CompletionAction.REMOVE_ROW) {
+                                    runWriteAction { source!!.removeComponent(component) }
+                                }
+                            )
+                        )
+                    }.also {
+                        log.info("Fetched and rendering ${it.size} installed components: ${it.joinToString(", ") { component -> component.title }}")
+                    }
+                }.asCompletableFuture()
+            }.apply {
+                border = JBUI.Borders.emptyTop(10)
+            })
+        }
 
         log.info("Successfully created initial panel")
     }

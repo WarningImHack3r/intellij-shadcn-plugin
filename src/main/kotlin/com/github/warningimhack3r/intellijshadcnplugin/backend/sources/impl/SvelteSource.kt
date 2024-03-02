@@ -30,9 +30,7 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
         val fileManager = FileManager(project)
         var tsConfig = fileManager.getFileContentsAtPath(configFile)
         if (tsConfig == null) {
-            if (!usesKit) throw NoSuchFileException("Cannot get $configFile").also {
-                log.error("Failed to get $configFile, throwing exception")
-            }
+            if (!usesKit) throw NoSuchFileException("Cannot get $configFile")
             val res = ShellRunner(project).execute(arrayOf("npx", "svelte-kit", "sync"))
             if (res == null) {
                 NotificationManager(project).sendNotification(
@@ -44,18 +42,14 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
                 throw NoSuchFileException("Cannot get or generate $configFile")
             }
             Thread.sleep(250) // wait for the sync to create the files
-            tsConfig = fileManager.getFileContentsAtPath(configFile) ?: throw NoSuchFileException("Cannot get $configFile").also {
-                log.error("Failed to get $configFile once again, throwing exception")
-            }
+            tsConfig = fileManager.getFileContentsAtPath(configFile) ?: throw NoSuchFileException("Cannot get $configFile")
         }
         val aliasPath = Json.parseToJsonElement(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get(alias.substringBefore("/"))
             ?.jsonArray?.get(0)
-            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias").also {
-                log.error("Failed to find alias $alias in $tsConfig, throwing exception")
-            }
+            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return "${aliasPath.replace(Regex("^\\.+/"), "")}/${alias.substringAfter("/")}".also {
             log.debug("Resolved alias $alias to $it")
         }

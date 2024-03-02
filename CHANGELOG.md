@@ -12,6 +12,18 @@
 
 ## [Unreleased]
 
+## [0.7.3] - 2024-03-02
+
+### Added
+
+- [Svelte/Vue] Notify when an updated component does no longer uses some installed files, allowing to remove them
+- Allow to remove installed dependencies when they are no longer used by any component
+
+### Fixed
+
+- Fix a freeze when executing commands on macOS/Linux
+- Improve performance and stability
+
 ## [0.7.2] - 2024-02-16
 
 ### Fixed

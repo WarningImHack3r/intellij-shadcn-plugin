@@ -8,6 +8,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Co
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
+import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
@@ -61,18 +62,14 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     private fun fetchComponent(componentName: String): ComponentWithContents {
         val style = getLocalConfig().style
         val response = RequestSender.sendRequest("$domain/registry/styles/$style/$componentName.json")
-        return response.ok { Json.decodeFromString(it.body) } ?: throw Exception("Component not found").also {
-            log.error("Unable to fetch component $componentName", it)
-        }
+        return response.ok { Json.decodeFromString(it.body) } ?: throw Exception("Component $componentName not found")
     }
 
     protected fun fetchColors(): JsonElement {
         val baseColor = getLocalConfig().tailwind.baseColor
         return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
             Json.parseToJsonElement(it.body)
-        } ?: throw Exception("Colors not found").also {
-            log.error("Unable to fetch colors", it)
-        }
+        } ?: throw Exception("Colors not found")
     }
 
     protected open fun getRegistryDependencies(component: ComponentWithContents): List<ComponentWithContents> {
@@ -83,12 +80,12 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     }
 
     // Public methods
-    open fun fetchAllComponents(): List<ISPComponent> {
+    open fun fetchAllComponents(): List<Component> {
         return RequestSender.sendRequest("$domain/registry/index.json").ok {
             Json.decodeFromString<List<Component>>(it.body)
-        }?.map { ISPComponent(it.name) }?.also {
+        }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
-        } ?: emptyList<ISPComponent>().also {
+        } ?: emptyList<Component>().also {
             log.error("Unable to fetch remote components")
         }
     }
@@ -109,12 +106,55 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         // Install component
         val component = fetchComponent(componentName)
         val installedComponents = getInstalledComponents()
+        val fileManager = FileManager(project)
+        val notifManager = NotificationManager(project)
         log.debug("Installing ${component.name} (installed: ${installedComponents.joinToString(", ")})")
         setOf(component, *getRegistryDependencies(component).filter {
             !installedComponents.contains(it.name)
         }.toTypedArray<ComponentWithContents>()).also {
             log.debug("Installing ${it.size} components: ${it.joinToString(", ") { component -> component.name }}")
         }.forEach { downloadedComponent ->
+            val path =
+                "${resolveAlias(getLocalConfig().aliases.components)}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
+                    "/${downloadedComponent.name}"
+                } else ""
+            if (usesDirectoriesForComponents()) {
+                val remotelyDeletedFiles = fileManager.getFileAtPath(path)?.children?.filter { file ->
+                    downloadedComponent.files.none { it.name == file.name }
+                } ?: emptyList()
+                val multipleFiles = remotelyDeletedFiles.size > 1
+                notifManager.sendNotification(
+                    "Deprecated component file${if (multipleFiles) "s" else ""} in ${downloadedComponent.name}",
+                    "The following file${if (multipleFiles) "s are" else " is"} no longer part of ${downloadedComponent.name}: ${
+                        remotelyDeletedFiles.joinToString(", ") { file ->
+                            file.name
+                        }
+                    }. Do you want to remove ${if (multipleFiles) "them" else "it"}?"
+                ) { notification ->
+                    listOf(
+                        NotificationAction.createSimple("Remove " + if (multipleFiles) "them" else "it") {
+                            remotelyDeletedFiles.forEach { file ->
+                                runWriteAction { fileManager.deleteFile(file) }
+                            }
+                            log.info(
+                                "Removed deprecated file${if (multipleFiles) "s" else ""} from ${downloadedComponent.name} (${
+                                    downloadedComponent.files.joinToString(", ") { file ->
+                                        file.name
+                                    }
+                                }): ${
+                                    remotelyDeletedFiles.joinToString(", ") { file ->
+                                        file.name
+                                    }
+                                }"
+                            )
+                            notification.expire()
+                        },
+                        NotificationAction.createSimple("Keep " + if (multipleFiles) "them" else "it") {
+                            notification.expire()
+                        }
+                    )
+                }
+            }
             downloadedComponent.files.forEach { file ->
                 val psiFile = PsiFileFactory.getInstance(project).createFileFromText(
                     adaptFileExtensionToConfig(file.name),
@@ -123,10 +163,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     ),
                     adaptFileToConfig(file.content)
                 )
-                val path = "${resolveAlias(getLocalConfig().aliases.components)}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
-                    "/${downloadedComponent.name}"
-                } else ""
-                FileManager(project).saveFileAtPath(psiFile, path)
+                fileManager.saveFileAtPath(psiFile, path)
             }
         }
 
@@ -142,7 +179,6 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 "${dropLast(1).joinToString(", ")} and ${last()}"
             }
         }
-        val notifManager = NotificationManager(project)
         notifManager.sendNotification(
             "Installed ${component.name}",
             "${component.name} requires $dependenciesList to be installed."
@@ -170,9 +206,11 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         val remoteComponent = fetchComponent(componentName)
         return remoteComponent.files.all { file ->
             (FileManager(project).getFileContentsAtPath(
-                "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${if (usesDirectoriesForComponents()) {
-                    "/${remoteComponent.name}"
-                } else ""}/${file.name}"
+                "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${
+                    if (usesDirectoriesForComponents()) {
+                        "/${remoteComponent.name}"
+                    } else ""
+                }/${file.name}"
             ) == adaptFileToConfig(file.content)).also {
                 log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
             }
@@ -181,12 +219,48 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     open fun removeComponent(componentName: String) {
         val remoteComponent = fetchComponent(componentName)
-        val componentsDir = "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}"
+        val componentsDir =
+            "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}"
         if (usesDirectoriesForComponents()) {
             FileManager(project).deleteFileAtPath("$componentsDir/${remoteComponent.name}")
         } else {
             remoteComponent.files.forEach { file ->
                 FileManager(project).deleteFileAtPath("$componentsDir/${file.name}")
+            }
+        }
+        // Remove dependencies no longer needed by any component
+        val remoteComponents = fetchAllComponents()
+        val allPossiblyNeededDependencies = remoteComponents.map { it.dependencies }.flatten().toSet()
+        val currentlyNeededDependencies = getInstalledComponents().map { component ->
+            remoteComponents.find { it.name == component }?.dependencies ?: emptyList()
+        }.flatten().toSet()
+        val uselessDependencies = DependencyManager(project).getInstalledDependencies().filter { dependency ->
+            dependency in allPossiblyNeededDependencies && dependency !in currentlyNeededDependencies
+        }
+        if (uselessDependencies.isNotEmpty()) {
+            val multipleDependencies = uselessDependencies.size > 1
+            val notifManager = NotificationManager(project)
+            notifManager.sendNotification(
+                "Unused dependenc${if (multipleDependencies) "ies" else "y"} found",
+                "The following dependenc${if (multipleDependencies) "ies are" else "y is"} no longer needed by any component: ${
+                    uselessDependencies.joinToString(", ") {
+                        it
+                    }
+                }. Do you want to remove ${if (multipleDependencies) "them" else "it"}?"
+            ) { notif ->
+                listOf(
+                    NotificationAction.createSimple("Remove") {
+                        runAsync {
+                            DependencyManager(project).uninstallDependencies(uselessDependencies)
+                        }.then {
+                            notifManager.sendNotificationAndHide(
+                                "Removed dependenc${if (multipleDependencies) "ies" else "y"}",
+                                "Removed ${uselessDependencies.joinToString(", ") { it }}."
+                            )
+                        }
+                        notif.expire()
+                    }
+                )
             }
         }
     }

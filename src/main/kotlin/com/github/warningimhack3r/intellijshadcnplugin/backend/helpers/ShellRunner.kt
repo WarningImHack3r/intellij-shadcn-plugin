@@ -21,8 +21,9 @@ class ShellRunner(private val project: Project? = null) {
             val platformCommand = if (isWindows()) {
                 arrayOf("cmd", "/c")
             } else {
-                arrayOf("sh", "-c")
+                emptyArray()
             } + command
+            log.debug("Executing command: \"${platformCommand.joinToString(" ")}\"")
             val process = ProcessBuilder(*platformCommand)
                 .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .directory(project?.basePath?.let { File(it) })
@@ -33,6 +34,7 @@ class ShellRunner(private val project: Project? = null) {
             }
         } catch (e: Exception) {
             if (isWindows() && !commandName.endsWith(".cmd")) {
+                log.warn("Failed to execute \"${command.joinToString(" ")}\". Trying to execute \"$commandName.cmd\" instead", e)
                 failedCommands.add(commandName)
                 return execute(arrayOf("$commandName.cmd") + command.drop(1).toTypedArray())
             }

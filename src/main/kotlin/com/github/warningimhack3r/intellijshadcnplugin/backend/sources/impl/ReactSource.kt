@@ -23,17 +23,13 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
             log.debug("Alias $alias does not start with $ or @, returning it as-is")
         }
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
-        val tsConfig = FileManager(project).getFileContentsAtPath(configFile) ?: throw NoSuchFileException("$configFile not found").also {
-            log.error("Failed to get $configFile, throwing exception")
-        }
+        val tsConfig = FileManager(project).getFileContentsAtPath(configFile) ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = Json.parseToJsonElement(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get("${alias.substringBefore("/")}/*")
             ?.jsonArray?.get(0)
-            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias").also {
-                 log.error("Failed to find alias $alias in $tsConfig, throwing exception")
-            }
+            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/")).also {
                 log.debug("Resolved alias $alias to $it")

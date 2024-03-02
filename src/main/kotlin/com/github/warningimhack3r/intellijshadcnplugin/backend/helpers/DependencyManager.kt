@@ -14,50 +14,78 @@ class DependencyManager(private val project: Project) {
         PROD
     }
 
-    private fun installDependency(dependencyName: String, installationType: InstallationType = InstallationType.PROD) {
-        // get the package manager
+    private fun getPackageManager(): String? {
         val fileManager = FileManager(project)
-        val packageManager = mapOf(
+        return mapOf(
             "package-lock.json" to "npm",
             "pnpm-lock.yaml" to "pnpm",
             "yarn.lock" to "yarn",
             "bun.lockb" to "bun"
-        ).filter { runReadAction {
-            fileManager.getVirtualFilesByName(it.key).isNotEmpty()
-        } }.values.firstOrNull()
-        // install the dependency
-        val command = listOfNotNull(
-            packageManager,
-            "i",
-            if (installationType == InstallationType.DEV) "-D" else null,
-            dependencyName
-        ).toTypedArray()
-        val res = ShellRunner(project).execute(command)
-        // check if the installation was successful
-        if (res == null) {
-            NotificationManager(project).sendNotification(
-                "Failed to install dependency $dependencyName",
-                "Failed to install dependency $dependencyName (${command.joinToString(" ")}). Please install it manually.",
-                NotificationType.ERROR
-            )
-        }
+        ).filter {
+            runReadAction {
+                fileManager.getVirtualFilesByName(it.key).isNotEmpty()
+            }
+        }.values.firstOrNull()
     }
 
     fun installDependencies(dependencyNames: List<String>, installationType: InstallationType = InstallationType.PROD) {
-        dependencyNames.forEach { installDependency(it, installationType) }
+        getPackageManager()?.let { packageManager ->
+            // install the dependency
+            val command = listOfNotNull(
+                packageManager,
+                "i",
+                if (installationType == InstallationType.DEV) "-D" else null,
+                *dependencyNames.toTypedArray()
+            ).toTypedArray()
+            val res = ShellRunner(project).execute(command)
+            // check if the installation was successful
+            if (res == null) {
+                NotificationManager(project).sendNotification(
+                    "Failed to install dependencies",
+                    "Failed to install dependencies: ${dependencyNames.joinToString { ", " }} (${command.joinToString(" ")}). Please install it manually.",
+                    NotificationType.ERROR
+                )
+            }
+        } ?: throw IllegalStateException("No package manager found")
     }
 
-    fun isDependencyInstalled(dependency: String): Boolean {
+    fun uninstallDependencies(dependencyNames: List<String>) {
+        getPackageManager()?.let { packageManager ->
+            // uninstall the dependencies
+            val command = listOf(
+                packageManager,
+                "remove",
+                *dependencyNames.toTypedArray()
+            ).toTypedArray()
+            val res = ShellRunner(project).execute(command)
+            // check if the uninstallation was successful
+            if (res == null) {
+                NotificationManager(project).sendNotification(
+                    "Failed to uninstall dependencies",
+                    "Failed to uninstall dependencies (${command.joinToString(" ")}). Please uninstall them manually.",
+                    NotificationType.ERROR
+                )
+            }
+        } ?: throw IllegalStateException("No package manager found")
+    }
+
+    fun getInstalledDependencies(): List<String> {
         // Read the package.json file
         return FileManager(project).getFileContentsAtPath("package.json")?.let { packageJson ->
             Json.parseToJsonElement(packageJson).jsonObject.filter {
                 it.key == "dependencies" || it.key == "devDependencies"
             }.map { it.value.jsonObject.keys }.flatten().also {
-                logger<DependencyManager>().debug("Installed dependencies: $it, is $dependency installed? ${it.contains(dependency)}")
-            }.contains(dependency)
-            // Check if the dependency is installed
-        } ?: false.also {
-            logger<DependencyManager>().error("package.json not found, returning false")
+                logger<DependencyManager>().debug("Installed dependencies: $it")
+            }
+        } ?: emptyList<String>().also {
+            logger<DependencyManager>().error("package.json not found")
+        }
+    }
+
+    fun isDependencyInstalled(dependency: String): Boolean {
+        // Read the package.json file
+        return getInstalledDependencies().contains(dependency).also {
+            logger<DependencyManager>().debug("Is $dependency installed? $it")
         }
     }
 }

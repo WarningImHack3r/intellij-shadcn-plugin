@@ -25,14 +25,20 @@ class FileManager(private val project: Project) {
         }
     }
 
-    fun deleteFileAtPath(path: String): Boolean {
+    fun deleteFile(file: VirtualFile): Boolean {
         return try {
-            getFileAtPath(path)?.delete(this)?.let { true } ?: false
+            file.delete(this).let { true }
         } catch (e: IOException) {
             false
         }.also {
-            if (!it) log.warn("Unable to delete file at path $path")
-            else log.debug("Deleted file at path $path")
+            if (!it) log.warn("Unable to delete file at path ${file.path}")
+            else log.debug("Deleted file at path ${file.path}")
+        }
+    }
+
+    fun deleteFileAtPath(path: String): Boolean {
+        return getFileAtPath(path)?.let { deleteFile(it) } ?: false.also {
+            log.warn("No file to delete found at path $path")
         }
     }
 
@@ -60,7 +66,9 @@ class FileManager(private val project: Project) {
                 name,
                 GlobalSearchScope.projectScope(project)
             )
-        }).sortedBy { file ->
+        }).filter { file ->
+            !file.path.contains("/node_modules/") && !file.path.contains("/.git/")
+        }.sortedBy { file ->
             name.toRegex().find(file.path)?.range?.first ?: Int.MAX_VALUE
         }.also {
             log.debug("Found ${it.size} files named $name: ${it.toList()}")
@@ -69,9 +77,7 @@ class FileManager(private val project: Project) {
 
     private fun getDeepestFileForPath(filePath: String): VirtualFile {
         var paths = filePath.split('/')
-        var currentFile = getVirtualFilesByName(paths.first()).firstOrNull() ?: throw NoSuchFileException("No file found at path $filePath").also {
-            log.warn("No file found at path ${paths.first()}")
-        }
+        var currentFile = getVirtualFilesByName(paths.first()).firstOrNull() ?: throw NoSuchFileException("No file found at path $filePath")
         paths = paths.drop(1)
         for (path in paths) {
             val child = currentFile.findChild(path)

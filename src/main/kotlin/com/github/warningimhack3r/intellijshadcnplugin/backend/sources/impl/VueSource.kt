@@ -45,14 +45,10 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             else -> "tsconfig.json"
         }.let { if (!config.typescript) "jsconfig.json" else it }
 
-        val tsConfig = FileManager(project).getFileContentsAtPath(tsConfigLocation) ?: throw NoSuchFileException("$tsConfigLocation not found").also {
-            log.error("Failed to get $tsConfigLocation, throwing exception")
-        }
+        val tsConfig = FileManager(project).getFileContentsAtPath(tsConfigLocation) ?: throw NoSuchFileException("$tsConfigLocation not found")
         val aliasPath = (resolvePath(tsConfig) ?: if (config.typescript) {
             resolvePath("tsconfig.app.json")
-        } else null) ?: throw Exception("Cannot find alias $alias").also {
-            log.error("Failed to find alias $alias in $tsConfig, throwing exception")
-        }
+        } else null) ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/")).also {
                 log.debug("Resolved alias $alias to $it")
