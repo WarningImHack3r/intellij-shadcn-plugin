@@ -8,6 +8,7 @@ class SvelteConfig(
     override val `$schema`: String,
     override val style: String,
     override val tailwind: Tailwind,
+    val typescript: Boolean = true,
     override val aliases: Aliases
 ) : Config() {
 

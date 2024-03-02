@@ -16,7 +16,8 @@
 
 ### Added
 
-- [Svelte/Vue] Notify when an updated component does no longer uses some installed files, allowing to remove them
+- [Svelte/Vue] Notify when an updated component no longer uses some installed files, allowing to remove them
+- [Svelte] Add support for the TypeScript option
 - Allow to remove installed dependencies when they are no longer used by any component
 
 ### Fixed

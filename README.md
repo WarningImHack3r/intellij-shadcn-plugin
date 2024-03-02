@@ -8,7 +8,7 @@
 
 - Rework `class`es replacement detection mechanism to be 100% accurate
   - Add tests for this
-- Add support for Vue/Svelte `typescript` option (transpiling TypeScript to JavaScript as well as in `*.vue` & `*.svelte` files)
+- Add support for Vue `typescript` option (transpiling TypeScript to JavaScript as well as in `*.vue` files)
 
 ## Description
 

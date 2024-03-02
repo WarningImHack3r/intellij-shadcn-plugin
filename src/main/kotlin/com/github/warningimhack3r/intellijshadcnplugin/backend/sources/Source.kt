@@ -24,7 +24,7 @@ import java.nio.file.NoSuchFileException
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
     private val log = logger<Source<C>>()
     abstract var framework: String
-    private val domain: String
+    protected val domain: String
         get() = URI(getLocalConfig().`$schema`).let { uri ->
             "${uri.scheme}://${uri.host}".also {
                 log.debug("Parsed domain: $it")
@@ -59,10 +59,9 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     protected abstract fun adaptFileToConfig(contents: String): String
 
-    private fun fetchComponent(componentName: String): ComponentWithContents {
-        val style = getLocalConfig().style
-        val response = RequestSender.sendRequest("$domain/registry/styles/$style/$componentName.json")
-        return response.ok { Json.decodeFromString(it.body) } ?: throw Exception("Component $componentName not found")
+    protected open fun fetchComponent(componentName: String): ComponentWithContents {
+        return RequestSender.sendRequest("$domain/registry/styles/${getLocalConfig().style}/$componentName.json")
+            .ok { Json.decodeFromString(it.body) } ?: throw Exception("Component $componentName not found")
     }
 
     protected fun fetchColors(): JsonElement {
