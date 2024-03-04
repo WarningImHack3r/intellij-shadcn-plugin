@@ -50,7 +50,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.0
