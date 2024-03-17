@@ -41,7 +41,6 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     log.debug("Parsed config: ${config.javaClass.name}")
                 }
             } catch (e: Exception) {
-                log.error("Unable to parse $file", e)
                 throw UnparseableConfigException(project, "Unable to parse $file", e)
             }
         } ?: throw NoSuchFileException("$file not found")
@@ -85,7 +84,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
         } ?: emptyList<Component>().also {
-            log.error("Unable to fetch remote components")
+            log.warn("Unable to fetch remote components")
         }
     }
 
@@ -97,7 +96,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }?.sorted()?.also {
             log.info("Fetched ${it.size} installed components: ${it.joinToString(", ")}")
         } ?: emptyList<String>().also {
-            log.error("Unable to fetch installed components")
+            log.warn("Unable to fetch installed components")
         }
     }
 

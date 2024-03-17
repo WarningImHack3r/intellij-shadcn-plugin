@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix error logging throwing crashes
+
 ## [0.7.3] - 2024-03-02
 
 ### Added

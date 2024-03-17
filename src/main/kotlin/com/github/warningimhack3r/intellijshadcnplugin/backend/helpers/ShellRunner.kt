@@ -12,7 +12,7 @@ class ShellRunner(private val project: Project? = null) {
 
     fun execute(command: Array<String>): String? {
         val commandName = command.firstOrNull() ?: return null.also {
-            log.error("No command name provided")
+            log.warn("No command name provided")
         }
         if (isWindows() && failedCommands.contains(commandName)) {
             command[0] = "$commandName.cmd"
@@ -38,7 +38,7 @@ class ShellRunner(private val project: Project? = null) {
                 failedCommands.add(commandName)
                 return execute(arrayOf("$commandName.cmd") + command.drop(1).toTypedArray())
             }
-            log.error("Error while executing \"${command.joinToString(" ")}\"", e)
+            log.warn("Error while executing \"${command.joinToString(" ")}\"", e)
             null
         }
     }

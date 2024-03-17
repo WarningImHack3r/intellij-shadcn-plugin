@@ -55,13 +55,11 @@ class ISPWindowContents(private val project: Project) {
         coroutineScope.launch {
             source = runReadAction { SourceScanner.findShadcnImplementation(project) }
             if (source == null) {
-                log.error("No shadcn/ui source found")
                 throw IllegalStateException("No shadcn/ui source found")
             }
             installedComponents = runReadAction { source!!.getInstalledComponents() }
         }.invokeOnCompletion { throwable ->
             if (throwable != null && throwable !is CancellationException) {
-                log.error("Failed to fetch source and installed components", throwable)
                 return@invokeOnCompletion
             }
             // Add a component panel

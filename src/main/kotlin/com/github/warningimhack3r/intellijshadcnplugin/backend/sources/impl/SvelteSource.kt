@@ -42,7 +42,6 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
                     "Please run <code>npx svelte-kit sync</code> in your project directory to generate the file and try again.",
                     NotificationType.ERROR
                 )
-                log.error("Failed to generate $configFile, sent notification and throwing exception")
                 throw NoSuchFileException("Cannot get or generate $configFile")
             }
             Thread.sleep(250) // wait for the sync to create the files
