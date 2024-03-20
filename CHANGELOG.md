@@ -12,6 +12,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix deprecated component alert always displaying
+- Fix imports replacement with new shadcn-svelte formats
+
 ## [0.7.4] - 2024-03-17
 
 ### Fixed

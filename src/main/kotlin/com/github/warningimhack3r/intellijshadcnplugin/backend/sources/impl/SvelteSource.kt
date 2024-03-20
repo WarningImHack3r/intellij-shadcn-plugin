@@ -81,7 +81,7 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
     override fun adaptFileToConfig(contents: String): String {
         val config = getLocalConfig()
         return contents.replace(
-            Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
+            Regex("([\"'])[^\r\n/]+/registry/[^/]+"), "$1${cleanAlias(config.aliases.components)}"
         ).replace(
             "\$lib/utils", config.aliases.utils
         )

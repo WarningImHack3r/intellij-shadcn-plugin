@@ -116,41 +116,44 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 "${resolveAlias(getLocalConfig().aliases.components)}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
                     "/${downloadedComponent.name}"
                 } else ""
+            // Check for deprecated components
             if (usesDirectoriesForComponents()) {
                 val remotelyDeletedFiles = fileManager.getFileAtPath(path)?.children?.filter { file ->
                     downloadedComponent.files.none { it.name == file.name }
                 } ?: emptyList()
-                val multipleFiles = remotelyDeletedFiles.size > 1
-                notifManager.sendNotification(
-                    "Deprecated component file${if (multipleFiles) "s" else ""} in ${downloadedComponent.name}",
-                    "The following file${if (multipleFiles) "s are" else " is"} no longer part of ${downloadedComponent.name}: ${
-                        remotelyDeletedFiles.joinToString(", ") { file ->
-                            file.name
-                        }
-                    }. Do you want to remove ${if (multipleFiles) "them" else "it"}?"
-                ) { notification ->
-                    listOf(
-                        NotificationAction.createSimple("Remove " + if (multipleFiles) "them" else "it") {
-                            remotelyDeletedFiles.forEach { file ->
-                                runWriteAction { fileManager.deleteFile(file) }
+                if (remotelyDeletedFiles.isNotEmpty()) {
+                    val multipleFiles = remotelyDeletedFiles.size > 1
+                    notifManager.sendNotification(
+                        "Deprecated component file${if (multipleFiles) "s" else ""} in ${downloadedComponent.name}",
+                        "The following file${if (multipleFiles) "s are" else " is"} no longer part of ${downloadedComponent.name}: ${
+                            remotelyDeletedFiles.joinToString(", ") { file ->
+                                file.name
                             }
-                            log.info(
-                                "Removed deprecated file${if (multipleFiles) "s" else ""} from ${downloadedComponent.name} (${
-                                    downloadedComponent.files.joinToString(", ") { file ->
-                                        file.name
-                                    }
-                                }): ${
-                                    remotelyDeletedFiles.joinToString(", ") { file ->
-                                        file.name
-                                    }
-                                }"
-                            )
-                            notification.expire()
-                        },
-                        NotificationAction.createSimple("Keep " + if (multipleFiles) "them" else "it") {
-                            notification.expire()
-                        }
-                    )
+                        }. Do you want to remove ${if (multipleFiles) "them" else "it"}?"
+                    ) { notification ->
+                        listOf(
+                            NotificationAction.createSimple("Remove " + if (multipleFiles) "them" else "it") {
+                                remotelyDeletedFiles.forEach { file ->
+                                    runWriteAction { fileManager.deleteFile(file) }
+                                }
+                                log.info(
+                                    "Removed deprecated file${if (multipleFiles) "s" else ""} from ${downloadedComponent.name} (${
+                                        downloadedComponent.files.joinToString(", ") { file ->
+                                            file.name
+                                        }
+                                    }): ${
+                                        remotelyDeletedFiles.joinToString(", ") { file ->
+                                            file.name
+                                        }
+                                    }"
+                                )
+                                notification.expire()
+                            },
+                            NotificationAction.createSimple("Keep " + if (multipleFiles) "them" else "it") {
+                                notification.expire()
+                            }
+                        )
+                    }
                 }
             }
             downloadedComponent.files.forEach { file ->
