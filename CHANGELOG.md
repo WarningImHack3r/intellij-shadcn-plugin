@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.7.5] - 2024-03-20
+
 ### Fixed
 
 - Fix deprecated component alert always displaying
@@ -61,7 +63,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.4...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.5...HEAD
+[0.7.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.1...v0.7.2
