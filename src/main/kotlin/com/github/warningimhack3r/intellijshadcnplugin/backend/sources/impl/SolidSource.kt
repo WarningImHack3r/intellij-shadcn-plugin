@@ -12,7 +12,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
 class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.serializer()) {
-    private val log = logger<SolidSource>()
+    companion object {
+        private val log = logger<SolidSource>()
+    }
     override var framework = "Solid"
 
     override fun usesDirectoriesForComponents() = false

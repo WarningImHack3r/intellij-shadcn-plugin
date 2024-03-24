@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix a crash when opening the tool window multiple times within a non-shadcn/ui project (#26)
+
 ## [0.7.5] - 2024-03-20
 
 ### Fixed

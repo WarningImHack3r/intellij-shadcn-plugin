@@ -1,11 +1,9 @@
 package com.github.warningimhack3r.intellijshadcnplugin.ui
 
-import com.github.warningimhack3r.intellijshadcnplugin.backend.SourceScanner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
@@ -24,8 +22,10 @@ import javax.swing.border.CompoundBorder
 import javax.swing.border.MatteBorder
 import javax.swing.border.TitledBorder
 
-class ISPWindowContents(private val project: Project) {
-    private val log = logger<ISPWindowContents>()
+class ISPWindowContents(private val source: Source<*>) {
+    companion object {
+        private val log = logger<ISPWindowContents>()
+    }
 
     data class Item(
         val title: String,
@@ -50,14 +50,9 @@ class ISPWindowContents(private val project: Project) {
         border = JBUI.Borders.empty(10)
 
         val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-        var source: Source<*>? = null
         var installedComponents = emptyList<String>()
         coroutineScope.launch {
-            source = runReadAction { SourceScanner.findShadcnImplementation(project) }
-            if (source == null) {
-                throw IllegalStateException("No shadcn/ui source found")
-            }
-            installedComponents = runReadAction { source!!.getInstalledComponents() }
+            installedComponents = runReadAction { source.getInstalledComponents() }
         }.invokeOnCompletion { throwable ->
             if (throwable != null && throwable !is CancellationException) {
                 return@invokeOnCompletion
@@ -65,16 +60,16 @@ class ISPWindowContents(private val project: Project) {
             // Add a component panel
             add(createPanel("Add a component") {
                 coroutineScope.async {
-                    runReadAction { source!!.fetchAllComponents() }.map { component ->
+                    runReadAction { source.fetchAllComponents() }.map { component ->
                         Item(
                             component.name,
                             "${component.name.replace("-", " ")
                                 .replaceFirstChar {
                                     if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
-                                }} component for ${source!!.framework}",
+                                }} component for ${source.framework}",
                             listOf(
                                 LabeledAction("Add", CompletionAction.DISABLE_ROW) {
-                                    runWriteAction { source!!.addComponent(component.name) }
+                                    runWriteAction { source.addComponent(component.name) }
                                 }
                             ),
                             installedComponents.contains(component.name)
@@ -99,12 +94,12 @@ class ISPWindowContents(private val project: Project) {
                             null,
                             listOfNotNull(
                                 LabeledAction("Update", CompletionAction.REMOVE_TRIGGER) {
-                                    runWriteAction { source!!.addComponent(component) }
+                                    runWriteAction { source.addComponent(component) }
                                 }.takeIf {
-                                    runReadAction { !source!!.isComponentUpToDate(component) }
+                                    runReadAction { !source.isComponentUpToDate(component) }
                                 },
                                 LabeledAction("Remove", CompletionAction.REMOVE_ROW) {
-                                    runWriteAction { source!!.removeComponent(component) }
+                                    runWriteAction { source.removeComponent(component) }
                                 }
                             )
                         )

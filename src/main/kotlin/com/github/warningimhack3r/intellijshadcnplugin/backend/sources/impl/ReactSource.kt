@@ -13,7 +13,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
 class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.serializer()) {
-    private val log = logger<ReactSource>()
+    companion object {
+        private val log = logger<ReactSource>()
+    }
     override var framework = "React"
 
     override fun usesDirectoriesForComponents() = false

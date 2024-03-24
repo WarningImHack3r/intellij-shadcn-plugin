@@ -16,7 +16,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
 class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
-    private val log = logger<VueSource>()
+    companion object {
+        private val log = logger<VueSource>()
+    }
     override var framework = "Vue"
 
     override fun usesDirectoriesForComponents() = true

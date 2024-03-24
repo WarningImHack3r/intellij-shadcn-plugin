@@ -13,6 +13,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
 object SourceScanner {
+    val log = logger<SourceScanner>()
 
     fun findShadcnImplementation(project: Project): Source<*>? {
         return FileManager(project).getFileContentsAtPath("components.json")?.let { componentsJson ->
@@ -28,7 +29,6 @@ object SourceScanner {
                 else -> null
             }
         }.also {
-            val log = logger<SourceScanner>()
             if (it == null) log.warn("No shadcn implementation found")
             else log.info("Found shadcn implementation: ${it.javaClass.name}")
         }

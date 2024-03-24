@@ -5,7 +5,9 @@ import com.intellij.openapi.project.Project
 import java.io.File
 
 class ShellRunner(private val project: Project? = null) {
-    private val log = logger<ShellRunner>()
+    companion object {
+        private val log = logger<ShellRunner>()
+    }
     private val failedCommands = mutableSetOf<String>()
 
     private fun isWindows() = System.getProperty("os.name").lowercase().contains("win")

@@ -19,7 +19,9 @@ import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
 class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfig.serializer()) {
-    private val log = logger<SvelteSource>()
+    companion object {
+        private val log = logger<SvelteSource>()
+    }
     override var framework = "Svelte"
 
     override fun usesDirectoriesForComponents() = true

@@ -10,7 +10,9 @@ import java.io.IOException
 import java.nio.file.NoSuchFileException
 
 class FileManager(private val project: Project) {
-    private val log = logger<FileManager>()
+    companion object {
+        private val log = logger<FileManager>()
+    }
 
     fun saveFileAtPath(file: PsiFile, path: String) {
         var deepest = getDeepestFileForPath(path)
