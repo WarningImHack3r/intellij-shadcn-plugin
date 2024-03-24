@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.7.6] - 2024-03-24
+
 ### Fixed
 
 - Fix a crash when opening the tool window multiple times within a non-shadcn/ui project (#26)
@@ -67,7 +69,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.5...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.6...HEAD
+[0.7.6]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.2...v0.7.3
