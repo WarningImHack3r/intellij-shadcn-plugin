@@ -34,7 +34,7 @@ class NotificationManager(val project: Project? = null) {
         } ?: Notifications.Bus.notify(notification)
         if (hide) {
             // Taken from experimental Notifications.Bus.notifyAndHide
-            (AppExecutorUtil.getAppExecutorService() as ScheduledExecutorService).schedule({
+            AppExecutorUtil.getAppScheduledExecutorService().schedule({
                 notification.expire()
             }, 5, TimeUnit.SECONDS)
         }

@@ -94,9 +94,9 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         )?.children?.map { file ->
             if (file.isDirectory) file.name else file.name.substringBeforeLast(".")
         }?.sorted()?.also {
-            log.info("Fetched ${it.size} installed components: ${it.joinToString(", ")}")
+            log.info("Found ${it.size} installed components: ${it.joinToString(", ")}")
         } ?: emptyList<String>().also {
-            log.warn("Unable to fetch installed components")
+            log.warn("Unable to find installed components")
         }
     }
 

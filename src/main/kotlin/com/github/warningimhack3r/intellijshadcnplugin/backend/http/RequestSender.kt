@@ -1,10 +1,12 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.http
 
 import com.intellij.openapi.diagnostic.logger
-import java.net.HttpURLConnection
-import java.net.URL
+import com.intellij.util.applyIf
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
 
-// Credit to: https://gist.github.com/GrzegorzDyrda/be47602fc855a52fba240dd2c2adc2d5
 object RequestSender {
     private val log = logger<RequestSender>()
 
@@ -16,27 +18,26 @@ object RequestSender {
      * [headers][Response.headers] and [body][Response.body].
      */
     fun sendRequest(url: String, method: String = "GET", headers: Map<String, String>? = null, body: String? = null): Response {
-        val conn = URL(url).openConnection() as HttpURLConnection
-
-        with(conn) {
-            requestMethod = method
-            doOutput = body != null
-            headers?.forEach(::setRequestProperty)
-            body?.let {
-                outputStream.use {
-                    it.write(body.toByteArray())
+        log.debug("Sending $method request to $url")
+        val request = HttpRequest.newBuilder(URI(url))
+            .method(method, body?.let {
+                HttpRequest.BodyPublishers.ofString(it)
+            } ?: HttpRequest.BodyPublishers.noBody())
+            .applyIf(headers != null) {
+                headers?.forEach { (key, value) -> header(key, value) }
+                this
+            }
+            .build()
+        log.debug("Request method: ${request.method()}, headers: ${request.headers().map()}, body: ${body?.take(100)}${if ((body?.length ?: 0) > 100) "..." else ""}")
+        HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.NORMAL)
+            .build()
+            .send(request, HttpResponse.BodyHandlers.ofString())
+            .let { response ->
+                return Response(response.statusCode(), response.headers().map(), response.body()).also {
+                    log.debug("Request to $url returned ${it.statusCode} (${it.body.length} bytes): ${it.body.take(100)}${if (it.body.length > 100) "..." else ""}")
                 }
             }
-        }
-
-        if (conn.responseCode in 300..399) {
-            log.debug("Redirecting from ${conn.url} to ${conn.getHeaderField("Location")}")
-            return sendRequest(conn.getHeaderField("Location"), method, mapOf(
-                "Cookie" to conn.getHeaderField("Set-Cookie")
-            ).filter { it.value != null }, body)
-        }
-
-        return Response(conn.responseCode, conn.headerFields, conn.inputStream.bufferedReader().readText())
     }
 
     data class Response(val statusCode: Int, val headers: Map<String, List<String>>, val body: String) {

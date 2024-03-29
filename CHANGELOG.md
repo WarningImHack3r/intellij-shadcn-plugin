@@ -12,6 +12,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Improve HTTP client for safer usage and better performance (#30)
+
+### Fixed
+
+- Fix a crash when sending a notification
+
 ## [0.7.6] - 2024-03-24
 
 ### Fixed
