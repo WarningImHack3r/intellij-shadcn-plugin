@@ -16,11 +16,11 @@
 
 ### Changed
 
-- Improve HTTP client for safer usage and better performance (#30)
+- Improve HTTP client for safer usage and better performance
 
 ### Fixed
 
-- Fix a crash when sending a notification
+- Fix a crash when sending a notification (#30)
 
 ## [0.7.6] - 2024-03-24
 
