@@ -11,13 +11,13 @@
                 class="com.github.warningimhack3r.intellijshadcnplugin.errorsubmitter.ErrorThrowingAction"
                 text="[shadcn/ui Debug] Throw an Error"
                 description="[shadcn/ui Debug] Try out the error handler"
-                icon="AllIcons.Debugger.Db_exception_breakpoint" />
+                icon="AllIcons.Debugger.Db_exception_breakpoint"/>
     </actions>
 
     <projectListeners>
         <listener
                 class="com.github.warningimhack3r.intellijshadcnplugin.listeners.ToolWindowListener"
-                topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener" />
+                topic="com.intellij.openapi.wm.ex.ToolWindowManagerListener"/>
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
@@ -25,11 +25,11 @@
                 id="shadcn/ui"
                 icon="/icons/shadcn.svg"
                 anchor="right"
-                factoryClass="com.github.warningimhack3r.intellijshadcnplugin.ui.ISPToolWindow" />
+                factoryClass="com.github.warningimhack3r.intellijshadcnplugin.ui.ISPToolWindow"/>
         <notificationGroup
                 id="shadcn/ui"
-                displayType="STICKY_BALLOON" />
+                displayType="STICKY_BALLOON"/>
         <errorHandler
-                implementation="com.github.warningimhack3r.intellijshadcnplugin.errorsubmitter.GitHubErrorReportSubmitter" />
+                implementation="com.github.warningimhack3r.intellijshadcnplugin.errorsubmitter.GitHubErrorReportSubmitter"/>
     </extensions>
 </idea-plugin>

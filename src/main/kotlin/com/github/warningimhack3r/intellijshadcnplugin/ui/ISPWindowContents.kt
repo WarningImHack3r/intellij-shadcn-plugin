@@ -63,10 +63,12 @@ class ISPWindowContents(private val source: Source<*>) {
                     runReadAction { source.fetchAllComponents() }.map { component ->
                         Item(
                             component.name,
-                            "${component.name.replace("-", " ")
-                                .replaceFirstChar {
+                            "${
+                                // Convert the component name to a human-readable title
+                                component.name.replace("-", " ").replaceFirstChar {
                                     if (it.isLowerCase()) it.titlecase(Locale.getDefault()) else it.toString()
-                                }} component for ${source.framework}",
+                                }
+                            } component for ${source.framework}",
                             listOf(
                                 LabeledAction("Add", CompletionAction.DISABLE_ROW) {
                                     runWriteAction { source.addComponent(component.name) }
@@ -115,7 +117,7 @@ class ISPWindowContents(private val source: Source<*>) {
         log.info("Successfully created initial panel")
     }
 
-    private fun createPanel(title: String, listContents: () -> CompletableFuture<List<Item>>) = JPanel().apply panel@ {
+    private fun createPanel(title: String, listContents: () -> CompletableFuture<List<Item>>) = JPanel().apply panel@{
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         // Title
         val titledBorder = TitledBorder(
@@ -167,7 +169,7 @@ class ISPWindowContents(private val source: Source<*>) {
         })
     }
 
-    private fun createRow(rowData: Item) = JPanel(BorderLayout()).apply row@ {
+    private fun createRow(rowData: Item) = JPanel(BorderLayout()).apply row@{
         border = CompoundBorder(
             MatteBorder(0, 0, 1, 0, JBUI.CurrentTheme.ToolWindow.borderColor()),
             JBUI.Borders.empty(10)
@@ -184,7 +186,7 @@ class ISPWindowContents(private val source: Source<*>) {
 
         // Actions horizontally stacked
         add(JPanel(BorderLayout()).apply {
-            add(JPanel().apply actions@ {
+            add(JPanel().apply actions@{
                 layout = BoxLayout(this, BoxLayout.X_AXIS)
 
                 val progressBar = JProgressBar().apply {
@@ -209,6 +211,7 @@ class ISPWindowContents(private val source: Source<*>) {
                                     this@row.parent.remove(this@row)
                                     // TODO: Update the other list & both counters
                                 }
+
                                 CompletionAction.DISABLE_ROW -> {
                                     this@actions.components.forEach { it.isEnabled = false }
                                     // TODO: Update the other list & both counters

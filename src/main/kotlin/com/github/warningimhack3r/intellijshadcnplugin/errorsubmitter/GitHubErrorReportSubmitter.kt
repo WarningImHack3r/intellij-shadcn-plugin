@@ -48,8 +48,8 @@ class GitHubErrorReportSubmitter : ErrorReportSubmitter() {
                 DataManager.getInstance().getDataContext(parentComponent)
             ) ?: getLastFocusedOrOpenedProject()
 
-            BrowserUtil.browse(buildAbbreviatedUrl(
-                mapOf(
+            BrowserUtil.browse(
+                buildAbbreviatedUrl(mapOf(
                     "title" to "[crash] $simpleErrorMessage",
                     "bug-explanation" to (additionalInfo ?: ""),
                     BUG_LOGS_KEY to stackTrace.split("\n").filter {
@@ -64,8 +64,8 @@ class GitHubErrorReportSubmitter : ErrorReportSubmitter() {
                         }
                     },*/ // currently cannot be set (https://github.com/orgs/community/discussions/44983)
                     "additional-device-info" to getDefaultHelpBlock(project)
-                ).filterValues { it.isNotEmpty() }
-            ))
+                ).filterValues { it.isNotEmpty() })
+            )
             consumer.consume(SubmittedReportInfo(SubmittedReportInfo.SubmissionStatus.NEW_ISSUE))
             true
         } catch (e: Exception) {
@@ -97,7 +97,8 @@ class GitHubErrorReportSubmitter : ErrorReportSubmitter() {
                     key == "title" || key == "additional-device-info"
                 })
             } else shorterLogUrl
-        } else url)
+        } else url
+        )
     }
 
     private fun buildUrl(fields: Map<String, String>) = buildString {
@@ -112,7 +113,7 @@ class GitHubErrorReportSubmitter : ErrorReportSubmitter() {
             val trimmedAndCleaned = split("\n".toRegex()).filter { trim().isNotEmpty() }
             // Build, JRE, JVM, OS
             trimmedAndCleaned
-                .dropWhile { s -> s == "=== About ==="}
+                .dropWhile { s -> s == "=== About ===" }
                 .takeWhile { s -> s != "=== System ===" }
                 .filter { s -> !s.startsWith("idea.") && !s.startsWith("Theme") }
                 .joinToString("\n") + "\n" +

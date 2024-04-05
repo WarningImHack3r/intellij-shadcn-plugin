@@ -46,10 +46,13 @@ class VueConfig(
     enum class Framework {
         @SerialName("vite")
         VITE,
+
         @SerialName("nuxt")
         NUXT,
+
         @SerialName("laravel")
         LARAVEL,
+
         @SerialName("astro")
         ASTRO
     }

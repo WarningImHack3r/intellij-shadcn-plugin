@@ -22,6 +22,7 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
     companion object {
         private val log = logger<SvelteSource>()
     }
+
     override var framework = "Svelte"
 
     override fun usesDirectoriesForComponents() = true

@@ -79,7 +79,8 @@ class FileManager(private val project: Project) {
 
     private fun getDeepestFileForPath(filePath: String): VirtualFile {
         var paths = filePath.split('/')
-        var currentFile = getVirtualFilesByName(paths.first()).firstOrNull() ?: throw NoSuchFileException("No file found at path $filePath")
+        var currentFile = getVirtualFilesByName(paths.first()).firstOrNull()
+            ?: throw NoSuchFileException("No file found at path $filePath")
         paths = paths.drop(1)
         for (path in paths) {
             val child = currentFile.findChild(path)

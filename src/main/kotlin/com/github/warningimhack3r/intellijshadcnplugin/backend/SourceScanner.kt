@@ -22,10 +22,8 @@ object SourceScanner {
             when {
                 schema.contains("shadcn-svelte.com") -> SvelteSource(project)
                 schema.contains("ui.shadcn.com") -> ReactSource(project)
-                schema.contains("shadcn-vue.com")
-                        || contents.keys.contains("framework") -> VueSource(project)
-                schema.contains("shadcn-solid")
-                        || schema.contains("solid-ui.com") -> SolidSource(project)
+                schema.contains("shadcn-vue.com") || contents.keys.contains("framework") -> VueSource(project)
+                schema.contains("shadcn-solid") || schema.contains("solid-ui.com") -> SolidSource(project)
                 else -> null
             }
         }.also {

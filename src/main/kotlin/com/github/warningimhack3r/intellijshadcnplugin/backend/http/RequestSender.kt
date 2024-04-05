@@ -17,7 +17,9 @@ object RequestSender {
      * Returns the [Response] object containing [statusCode][Response.statusCode],
      * [headers][Response.headers] and [body][Response.body].
      */
-    fun sendRequest(url: String, method: String = "GET", headers: Map<String, String>? = null, body: String? = null): Response {
+    fun sendRequest(
+        url: String, method: String = "GET", headers: Map<String, String>? = null, body: String? = null
+    ): Response {
         log.debug("Sending $method request to $url")
         val request = HttpRequest.newBuilder(URI(url))
             .method(method, body?.let {
@@ -28,12 +30,15 @@ object RequestSender {
                 this
             }
             .build()
-        log.debug("Request method: ${request.method()}, headers: ${request.headers().map()}, body: ${body?.take(100)}${if ((body?.length ?: 0) > 100) "..." else ""}")
+        log.debug(
+            "Request method: ${request.method()}, headers: ${
+                request.headers().map()
+            }, body: ${body?.take(100)}${if ((body?.length ?: 0) > 100) "..." else ""}"
+        )
         HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build()
-            .send(request, HttpResponse.BodyHandlers.ofString())
-            .let { response ->
+            .send(request, HttpResponse.BodyHandlers.ofString()).let { response ->
                 return Response(response.statusCode(), response.headers().map(), response.body()).also {
                     log.debug("Request to $url returned ${it.statusCode} (${it.body.length} bytes): ${it.body.take(100)}${if (it.body.length > 100) "..." else ""}")
                 }

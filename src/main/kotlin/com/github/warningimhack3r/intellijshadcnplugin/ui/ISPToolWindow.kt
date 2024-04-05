@@ -16,9 +16,13 @@ class ISPToolWindow : ToolWindowFactory {
     }
 
     override fun init(toolWindow: ToolWindow) {
-        log.info("Initializing shadcn/ui plugin v${PluginManagerCore.getPlugin(
-            PluginId.getId("com.github.warningimhack3r.intellijshadcnplugin")
-        )?.version ?: "???"}")
+        log.info(
+            "Initializing shadcn/ui plugin v${
+                PluginManagerCore.getPlugin(
+                    PluginId.getId("com.github.warningimhack3r.intellijshadcnplugin")
+                )?.version ?: "???"
+            }"
+        )
         ApplicationManager.getApplication().invokeLater {
             log.debug("Initializing tool window with icon")
             toolWindow.setIcon(ISPIcons.logo)

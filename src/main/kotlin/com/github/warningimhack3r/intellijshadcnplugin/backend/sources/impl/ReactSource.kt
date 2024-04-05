@@ -16,6 +16,7 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
     companion object {
         private val log = logger<ReactSource>()
     }
+
     override var framework = "React"
 
     override fun usesDirectoriesForComponents() = false
@@ -25,7 +26,8 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
             log.debug("Alias $alias does not start with $ or @, returning it as-is")
         }
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
-        val tsConfig = FileManager(project).getFileContentsAtPath(configFile) ?: throw NoSuchFileException("$configFile not found")
+        val tsConfig = FileManager(project).getFileContentsAtPath(configFile)
+            ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = Json.parseToJsonElement(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
@@ -96,7 +98,11 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
          * @param darkColors The dark colors map to use.
          * @return The converted classes.
          */
-        fun variablesToUtilities(classes: String, lightColors: Map<String, String>, darkColors: Map<String, String>): String {
+        fun variablesToUtilities(
+            classes: String,
+            lightColors: Map<String, String>,
+            darkColors: Map<String, String>
+        ): String {
             // Note: this does not include `border` classes at the beginning or end of the string,
             // but I'm once again following what the original code does for parity
             // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-css-vars.ts#L142-L145).
@@ -135,7 +141,8 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
         fun handleClasses(classes: String): String {
             var newClasses = classes
             if (!config.tailwind.cssVariables) {
-                val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject ?: throw Exception("Inline colors not found")
+                val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
+                    ?: throw Exception("Inline colors not found")
                 newClasses = variablesToUtilities(
                     newClasses,
                     inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->

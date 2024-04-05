@@ -19,6 +19,7 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
     companion object {
         private val log = logger<VueSource>()
     }
+
     override var framework = "Vue"
 
     override fun usesDirectoriesForComponents() = true
@@ -47,7 +48,8 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             else -> "tsconfig.json"
         }.let { if (!config.typescript) "jsconfig.json" else it }
 
-        val tsConfig = FileManager(project).getFileContentsAtPath(tsConfigLocation) ?: throw NoSuchFileException("$tsConfigLocation not found")
+        val tsConfig = FileManager(project).getFileContentsAtPath(tsConfigLocation)
+            ?: throw NoSuchFileException("$tsConfigLocation not found")
         val aliasPath = (resolvePath(tsConfig) ?: if (config.typescript) {
             resolvePath("tsconfig.app.json")
         } else null) ?: throw Exception("Cannot find alias $alias in $tsConfig")
@@ -94,7 +96,11 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
              * @param darkColors The dark colors map to use.
              * @return The converted classes.
              */
-            fun variablesToUtilities(classes: String, lightColors: Map<String, String>, darkColors: Map<String, String>): String {
+            fun variablesToUtilities(
+                classes: String,
+                lightColors: Map<String, String>,
+                darkColors: Map<String, String>
+            ): String {
                 // Note: this does not include `border` classes at the beginning or end of the string,
                 // but I'm once again following what the original code does for parity
                 // (https://github.com/radix-vue/shadcn-vue/blob/4214134e1834fdabcc5f0354e11593360f076e8d/packages/cli/src/utils/transformers/transform-css-vars.ts#L87-L89).
@@ -131,7 +137,8 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             }
 
             fun handleClasses(classes: String): String {
-                val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject ?: throw Exception("Inline colors not found")
+                val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
+                    ?: throw Exception("Inline colors not found")
                 return variablesToUtilities(
                     classes,
                     inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
@@ -143,12 +150,13 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
                 )
             }
 
-            val notTemplateClasses = Regex("[^:]class=(?:(?!>)[^\"'])*[\"']([^\"']*)[\"']").replace(newContents) { result ->
-                result.groupValues[0].replace(
-                    result.groupValues[1],
-                    handleClasses(result.groupValues[1])
-                )
-            }
+            val notTemplateClasses =
+                Regex("[^:]class=(?:(?!>)[^\"'])*[\"']([^\"']*)[\"']").replace(newContents) { result ->
+                    result.groupValues[0].replace(
+                        result.groupValues[1],
+                        handleClasses(result.groupValues[1])
+                    )
+                }
             // Double quoted templates
             Regex(":class=(?:(?!>)[^\"])*\"([^\"]*)\"").replace(notTemplateClasses) { result ->
                 val group = result.groupValues[1]
