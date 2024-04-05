@@ -50,7 +50,7 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
             tsConfig =
                 fileManager.getFileContentsAtPath(configFile) ?: throw NoSuchFileException("Cannot get $configFile")
         }
-        val aliasPath = Json.parseToJsonElement(tsConfig)
+        val aliasPath = tsConfigJson.parseToJsonElement(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get(alias.substringBefore("/"))

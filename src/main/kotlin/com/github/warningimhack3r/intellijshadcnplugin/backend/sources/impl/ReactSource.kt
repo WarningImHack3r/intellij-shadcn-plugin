@@ -6,7 +6,6 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Re
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.util.applyIf
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -26,7 +25,7 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
         }
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
         val tsConfig = FileManager(project).getFileContentsAtPath(configFile) ?: throw NoSuchFileException("$configFile not found")
-        val aliasPath = Json.parseToJsonElement(tsConfig)
+        val aliasPath = tsConfigJson.parseToJsonElement(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get("${alias.substringBefore("/")}/*")

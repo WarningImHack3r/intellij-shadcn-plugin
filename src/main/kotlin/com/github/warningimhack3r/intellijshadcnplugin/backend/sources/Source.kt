@@ -30,6 +30,11 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 log.debug("Parsed domain: $it")
             }
         }
+    protected val tsConfigJson = Json {
+        isLenient = true
+        allowTrailingCommas = true
+        allowComments = true
+    }
 
     // Utility methods
     protected fun getLocalConfig(): C {

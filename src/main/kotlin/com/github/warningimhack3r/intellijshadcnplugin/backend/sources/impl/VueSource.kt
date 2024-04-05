@@ -9,7 +9,6 @@ import com.intellij.notification.NotificationType
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.util.applyIf
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -29,7 +28,7 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
         }
 
         fun resolvePath(configFile: String): String? {
-            return Json.parseToJsonElement(configFile
+            return tsConfigJson.parseToJsonElement(configFile
                 .split("\n")
                 .filterNot { it.trim().startsWith("//") } // remove comments
                 .joinToString("\n")
