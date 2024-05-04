@@ -88,7 +88,27 @@ class ISPWindowContents(private val source: Source<*>) {
             })
 
             // Manage components panel
-            add(createPanel("Manage components") {
+            add(createPanel("Manage components", coroutineScope.async {
+                val shouldDisplay =
+                    runReadAction {
+                        installedComponents.any { component -> !source.isComponentUpToDate(component) }
+                    }
+                if (shouldDisplay) {
+                    JButton("Update all").apply {
+                        addActionListener {
+                            isEnabled = false
+                            installedComponents.forEach { component ->
+                                runWriteAction { source.addComponent(component) }
+                            }
+                            // TODO: Update the list's row actions
+                            val par = parent
+                            par.remove(this)
+                            par.revalidate()
+                        }
+                    }
+                    null // Remove once the update mechanism is implemented
+                } else null
+            }.asCompletableFuture()) {
                 coroutineScope.async {
                     installedComponents.map { component ->
                         Item(
@@ -117,26 +137,32 @@ class ISPWindowContents(private val source: Source<*>) {
         log.info("Successfully created initial panel")
     }
 
-    private fun createPanel(title: String, listContents: () -> CompletableFuture<List<Item>>) = JPanel().apply panel@{
-        layout = BoxLayout(this, BoxLayout.Y_AXIS)
-        // Title
-        val titledBorder = TitledBorder(
-            BorderFactory.createMatteBorder(1, 0, 0, 0, JBUI.CurrentTheme.ToolWindow.borderColor()),
-            title
-        )
-        add(JPanel().apply {
-            minimumSize = Dimension(Int.MAX_VALUE, preferredSize.height + 20)
-            maximumSize = Dimension(Int.MAX_VALUE, minimumSize.height)
-            border = titledBorder
-        })
-        var items: List<Item> = emptyList()
-        var scrollPane: JBScrollPane? = null
-        // Search bar
-        add(JBTextField().apply {
-            maximumSize = Dimension(Int.MAX_VALUE, this.preferredSize.height)
-            addKeyListener(object : KeyAdapter() {
-                override fun keyReleased(e: KeyEvent) {
-                    if (scrollPane != null) {
+    private fun createPanel(
+        title: String,
+        rightHandComponent: CompletableFuture<JComponent?> = CompletableFuture.completedFuture(null),
+        listContents: () -> CompletableFuture<List<Item>>
+    ) =
+        JPanel().apply panel@{
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            // Title
+            val titledBorder = TitledBorder(
+                BorderFactory.createMatteBorder(1, 0, 0, 0, JBUI.CurrentTheme.ToolWindow.borderColor()),
+                title
+            )
+            add(JPanel().apply {
+                minimumSize = Dimension(Int.MAX_VALUE, preferredSize.height + 20)
+                maximumSize = Dimension(Int.MAX_VALUE, minimumSize.height)
+                border = titledBorder
+            })
+            var items: List<Item> = emptyList()
+            var scrollPane: JBScrollPane? = null
+
+            // Search bar
+            val searchBar = JBTextField().apply {
+                maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
+                addKeyListener(object : KeyAdapter() {
+                    override fun keyReleased(e: KeyEvent) {
+                        if (scrollPane == null) return
                         this@panel.remove(scrollPane)
                         scrollPane = componentsList(items.filter {
                             it.title.lowercase().contains(text.lowercase())
@@ -145,20 +171,40 @@ class ISPWindowContents(private val source: Source<*>) {
                         this@panel.add(scrollPane)
                         this@panel.revalidate()
                     }
+                })
+            }
+            add(JPanel(BorderLayout()).apply {
+                layout = BoxLayout(this, BoxLayout.X_AXIS)
+                add(searchBar)
+                rightHandComponent.thenApplyAsync { component ->
+                    component?.let {
+                        it.maximumSize = Dimension(it.maximumSize.width, searchBar.maximumSize.height)
+                        add(it)
+                        revalidate()
+                    }
                 }
             })
-        })
-        // Components list
-        listContents()
-            .thenApplyAsync {
-                items = it
-                log.info("Rendering ${it.size} items for panel $title")
-                titledBorder.title = "$title (${it.size})"
-                scrollPane = componentsList(items)
-                add(scrollPane)
-                revalidate()
+
+            // Loading spinner
+            val spinner = JPanel(BorderLayout()).apply {
+                add(JLabel("Loading...").apply {
+                    horizontalAlignment = SwingConstants.CENTER
+                }, BorderLayout.CENTER)
             }
-    }
+            add(spinner)
+
+            // Components list
+            listContents()
+                .thenApplyAsync {
+                    items = it
+                    log.info("Rendering ${it.size} items for panel $title")
+                    titledBorder.title = "$title (${it.size})"
+                    scrollPane = componentsList(items)
+                    remove(spinner)
+                    add(scrollPane)
+                    revalidate()
+                }
+        }
 
     private fun componentsList(rows: List<Item>) = JBScrollPane().apply {
         setViewportView(JPanel(GridLayout(0, 1)).apply {
