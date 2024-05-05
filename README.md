@@ -4,9 +4,10 @@
 [![Version](https://img.shields.io/jetbrains/plugin/v/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/com.github.warningimhack3r.intellijshadcnplugin)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/com.github.warningimhack3r.intellijshadcnplugin)
 
-## ToDo list before 1.0.0
+## 1.0.0 roadmap
 
 - Add support for Vue `typescript` option (transpiling TypeScript to JavaScript as well as in `*.vue` files)
+  - See https://github.com/radix-vue/shadcn-vue/issues/378
 
 ## Description
 
