@@ -14,7 +14,7 @@
 
 ### Changed
 
-- Entirely rework the Tailwind classes replacement engine to be more accurate and faster
+- Entirely rewrite the Tailwind classes replacement engine to be more accurate and faster
     - Consequently, the plugin now depends
       on [Svelte](https://plugins.jetbrains.com/plugin/12375-svelte) & [Vue](https://plugins.jetbrains.com/plugin/9442-vue-js)
       extensions and only works on WebStorm or IntelliJ IDEA Ultimate
@@ -87,19 +87,11 @@
 - Initial release
 
 [Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.7...HEAD
-
 [0.7.7]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.6...v0.7.7
-
 [0.7.6]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.5...v0.7.6
-
 [0.7.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.4...v0.7.5
-
 [0.7.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.3...v0.7.4
-
 [0.7.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.2...v0.7.3
-
 [0.7.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.1...v0.7.2
-
 [0.7.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.0...v0.7.1
-
 [0.7.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.0
