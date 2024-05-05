@@ -5,6 +5,8 @@
     <vendor url="https://github.com/WarningImHack3r">WarningImHack3r</vendor>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>dev.blachut.svelte.lang</depends>
+    <depends>org.jetbrains.plugins.vue</depends>
 
     <actions>
         <action id="com.github.warningimhack3r.intellijshadcnplugin.errorsubmitter.ErrorThrowingAction"
