@@ -31,7 +31,7 @@ class ClassReplacementTests : BasePlatformTestCase() {
     private fun beforeAndAfterContents(fileName: String): Pair<String, String> {
         val file = myFixture.configureByFile(fileName)
         val visitorClass = when (val extension = file.name.substringAfterLast('.')) {
-            "jsx", "tsx" -> JSXClassReplacementVisitor::class
+            "jsx", "tsx", "js", "ts" -> JSXClassReplacementVisitor::class
             "svelte" -> SvelteClassReplacementVisitor::class
             "vue" -> VueClassReplacementVisitor::class
             else -> throw IllegalArgumentException("Unsupported extension: $extension")
@@ -70,6 +70,41 @@ class ClassReplacementTests : BasePlatformTestCase() {
 
     fun testOtherAttributeReplacement() {
         val (expected, actual) = beforeAndAfterContents("simpleOtherAttribute.jsx")
+        assertEquals(expected, actual)
+    }
+
+    fun testFullSimpleSvelteComponentClassReplacement() {
+        val (expected, actual) = beforeAndAfterContents("fullSimple.svelte")
+        assertEquals(expected, actual)
+    }
+
+    fun testFullComplexSvelteComponentClassReplacement() {
+        val (expected, actual) = beforeAndAfterContents("fullComplex.svelte")
+        assertEquals(expected, actual)
+    }
+
+    fun testFullSvelteVueTSClassReplacement() {
+        val (expected, actual) = beforeAndAfterContents("fullSvelteVueTS.ts")
+        assertEquals(expected, actual)
+    }
+
+    fun testFullSimpleVueComponentClassReplacement() {
+        val (expected, actual) = beforeAndAfterContents("fullSimple.vue")
+        assertEquals(expected, actual)
+    }
+
+    fun testFullComplexVueComponentClassReplacement() {
+        val (expected, actual) = beforeAndAfterContents("fullComplex.vue")
+        assertEquals(expected, actual)
+    }
+
+    fun testFullSimpleJSXComponentClassReplacement() {
+        val (expected, actual) = beforeAndAfterContents("fullSimple.tsx")
+        assertEquals(expected, actual)
+    }
+
+    fun testFullComplexJSXComponentClassReplacement() {
+        val (expected, actual) = beforeAndAfterContents("fullComplex.tsx")
         assertEquals(expected, actual)
     }
 }
