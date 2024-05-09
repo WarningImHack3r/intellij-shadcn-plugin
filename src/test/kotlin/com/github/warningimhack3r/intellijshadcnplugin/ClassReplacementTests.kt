@@ -5,11 +5,15 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replaceme
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.SvelteClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
 import com.intellij.openapi.project.Project
+import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
+@TestDataPath("\$CONTENT_ROOT/src/test/testData")
 class ClassReplacementTests : BasePlatformTestCase() {
+
+    override fun getTestDataPath() = "src/test/testData/classReplacement"
 
     private fun createVisitor(
         visitorClass: KClass<out ClassReplacementVisitor>,
@@ -24,9 +28,9 @@ class ClassReplacementTests : BasePlatformTestCase() {
         }
     }
 
-    private fun processedFile(contents: String, extension: String): String {
-        val file = myFixture.configureByText("file.${extension.removePrefix(".")}", contents)
-        val visitorClass = when (extension) {
+    private fun beforeAndAfterContents(fileName: String): Pair<String, String> {
+        val file = myFixture.configureByFile(fileName)
+        val visitorClass = when (val extension = file.name.substringAfterLast('.')) {
             "jsx", "tsx" -> JSXClassReplacementVisitor::class
             "svelte" -> SvelteClassReplacementVisitor::class
             "vue" -> VueClassReplacementVisitor::class
@@ -34,136 +38,38 @@ class ClassReplacementTests : BasePlatformTestCase() {
         }
         val visitor = createVisitor(visitorClass, project) { "a-$it" }
         file.accept(visitor)
-        return file.text
+        return Pair(myFixture.configureByFile(fileName.let {
+            it.substringBeforeLast('.') + "_after." + it.substringAfterLast('.')
+        }).text, file.text)
     }
 
     fun testBasicClassReplacement() {
-        val fileContent = """
-            const tag = <div className="foo">Hello, world!</div>;
-        """.trimIndent()
-
-        val expected = """
-            const tag = <div className="a-foo">Hello, world!</div>;
-        """.trimIndent()
-
-        assertEquals(expected, processedFile(fileContent, "tsx"))
+        val (expected, actual) = beforeAndAfterContents("basic.tsx")
+        assertEquals(expected, actual)
     }
 
     fun testSingleQuotesClassReplacement() {
-        val fileContent = """
-            const tag = <div className='foo'>Hello, world!</div>;
-        """.trimIndent()
-
-        val expected = """
-            const tag = <div className='a-foo'>Hello, world!</div>;
-        """.trimIndent()
-
-        assertEquals(expected, processedFile(fileContent, "tsx"))
+        val (expected, actual) = beforeAndAfterContents("singleQuotes.tsx")
+        assertEquals(expected, actual)
     }
 
     fun testSvelteClassReplacement() {
-        val fileContent = """
-            <script>
-                let name = "world";
-            </script>
-    
-            <h1 class="hello">Hello {name}!</h1>
-        """.trimIndent()
-
-        val expected = """
-            <script>
-                let name = "world";
-            </script>
-    
-            <h1 class="a-hello">Hello {name}!</h1>
-        """.trimIndent()
-
-        assertEquals(expected, processedFile(fileContent, "svelte"))
+        val (expected, actual) = beforeAndAfterContents("basic.svelte")
+        assertEquals(expected, actual)
     }
 
     fun testVueClassReplacement() {
-        val fileContent = """
-            <template>
-                <div id="app" class="foo">
-                    {{ message }}
-                </div>
-            </template>
-    
-            <script>
-                export default {
-                    data() {
-                        return {
-                            message: "Hello Vue!"
-                        }
-                    }
-                }
-            </script>
-        """.trimIndent()
-
-        val expected = """
-            <template>
-                <div id="app" class="a-foo">
-                    {{ message }}
-                </div>
-            </template>
-    
-            <script>
-                export default {
-                    data() {
-                        return {
-                            message: "Hello Vue!"
-                        }
-                    }
-                }
-            </script>
-        """.trimIndent()
-
-        assertEquals(expected, processedFile(fileContent, "vue"))
+        val (expected, actual) = beforeAndAfterContents("basic.vue")
+        assertEquals(expected, actual)
     }
 
-    fun testComprehensiveFileClassReplacement() {
-        val fileContent = """
-            <div class="foo">
-                <span class="bar">Hello, world!</span>
-                <p id="baz" class="qux">Goodbye, world!</p>
-            </div>
-        """.trimIndent()
-
-        val expected = """
-            <div class="a-foo">
-                <span class="a-bar">Hello, world!</span>
-                <p id="baz" class="a-qux">Goodbye, world!</p>
-            </div>
-        """.trimIndent()
-
-        assertEquals(expected, processedFile(fileContent, "jsx"))
+    fun testNestedAndOtherAttributesReplacement() {
+        val (expected, actual) = beforeAndAfterContents("nestedAndOtherAttributes.jsx")
+        assertEquals(expected, actual)
     }
 
     fun testOtherAttributeReplacement() {
-        val fileContent = """
-            <div id="foo">Hello, world!</div>
-        """.trimIndent()
-
-        val expected = """
-            <div id="foo">Hello, world!</div>
-        """.trimIndent()
-
-        assertEquals(expected, processedFile(fileContent, "jsx"))
-    }
-
-    fun testMixAndMatchReplacement() {
-        val fileContent = """
-            <div class="foo" id="bar">
-                <span class="baz" id="qux">Hello, world!</span>
-            </div>
-        """.trimIndent()
-
-        val expected = """
-            <div class="a-foo" id="bar">
-                <span class="a-baz" id="qux">Hello, world!</span>
-            </div>
-        """.trimIndent()
-
-        assertEquals(expected, processedFile(fileContent, "tsx"))
+        val (expected, actual) = beforeAndAfterContents("simpleOtherAttribute.jsx")
+        assertEquals(expected, actual)
     }
 }
