@@ -84,7 +84,7 @@ class ClassReplacementTests : BasePlatformTestCase() {
     }
 
     fun testFullSvelteVueTSClassReplacement() {
-        val (expected, actual) = beforeAndAfterContents("fullSvelteVueTS.ts")
+        val (expected, actual) = beforeAndAfterContents("fullSvelteVue.ts")
         assertEquals(expected, actual)
     }
 

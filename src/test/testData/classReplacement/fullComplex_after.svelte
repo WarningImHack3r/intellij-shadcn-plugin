@@ -11,7 +11,7 @@
     export { className as class };
 </script>
 
-<AccordionPrimitive.Header {level} class="flex">
+<AccordionPrimitive.Header {level} class="a-flex">
     <AccordionPrimitive.Trigger
         class={cn(
             "a-flex a-flex-1 a-items-center a-justify-between a-py-4 a-font-medium a-transition-all a-hover:underline a-[&[data-state=open]>svg]:rotate-180",
@@ -21,6 +21,6 @@
         on:click
     >
         <slot />
-        <ChevronDown class="a-h-4 a-w-4 a-transition-transform a-duration-200" />
+        <ChevronDown class="a-h-4 a-w-4 a-transition-transform a-duration-200"/>
     </AccordionPrimitive.Trigger>
 </AccordionPrimitive.Header>
