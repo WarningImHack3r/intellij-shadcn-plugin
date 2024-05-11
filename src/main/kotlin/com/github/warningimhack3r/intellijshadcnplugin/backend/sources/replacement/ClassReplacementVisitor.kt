@@ -1,7 +1,9 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
 
 import com.intellij.lang.javascript.JSStubElementTypes
+import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
+import com.intellij.lang.typescript.TypeScriptStubElementTypes
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
@@ -23,42 +25,60 @@ abstract class ClassReplacementVisitor(
         PlatformPatterns.psiElement(JSStubElementTypes.LITERAL_EXPRESSION)
     private val jsCallExpressionPattern: PsiElementPattern.Capture<PsiElement> =
         PlatformPatterns.psiElement(JSStubElementTypes.CALL_EXPRESSION)
+    private val jsOrTsVariablePattern: PsiElementPattern.Capture<PsiElement> =
+        PlatformPatterns.psiElement(TypeScriptStubElementTypes.TYPESCRIPT_VARIABLE)
 
     abstract fun classAttributeNameFromElement(element: PsiElement): String?
 
-    private fun printChildren(element: PsiElement, depth: Int = 0) {
+    private fun depthRecurseChildren(element: PsiElement, action: (PsiElement) -> Unit) {
         element.children.forEach { child ->
-            println("${">".repeat(depth)}Child: ${child.text} ($child/${child.javaClass})")
-            printChildren(child, depth + 1)
+            action(child)
+            depthRecurseChildren(child, action)
         }
     }
 
     override fun visitElement(element: PsiElement) {
         super.visitElement(element)
 
-        println("Visit: ${element.text} ($element/${element.javaClass})\n\t\tParent: ${element.parent?.text} (${element.parent}/${element.parent?.javaClass})")
+        when {
+            attributeValuePattern
+                .withChild(attributeValueTokenPattern)
+                .withAncestor(2, attributePattern)
+                .accepts(element) -> {
+                // Regular string attribute value
+                val attributeName = classAttributeNameFromElement(element.parent) ?: return
+                if (attributeName != "className" && attributeName != "class") return
+                replaceClassName(element, newClass)
+            }
 
-        if (jsLiteralExpressionPattern
+            jsLiteralExpressionPattern
                 .withAncestor(2, jsCallExpressionPattern)
                 .withAncestor(5, attributeValuePattern)
                 .withAncestor(6, attributePattern)
-                .accepts(element)
-        ) {
-            // String literal inside a function call
-            println("Found valid expression call: '${element.text}' ($element/${element.javaClass})")
-            printChildren(element)
-            replaceClassName(element, newClass)
-        } else if (attributeValueTokenPattern
-                .withParent(attributeValuePattern)
-                .withAncestor(2, attributePattern)
-                .accepts(element)
-        ) {
-            // Regular string attribute value
-            val attributeName = classAttributeNameFromElement(element.parent.parent) ?: return
-            if (attributeName != "className" && attributeName != "class") return
-            println("Found valid value: '${element.text}' ($element/${element.javaClass})")
-            printChildren(element)
-            replaceClassName(element.parent, newClass)
+                .accepts(element) -> {
+                // String literal directly inside a function call
+                replaceClassName(element, newClass)
+            }
+
+            jsCallExpressionPattern
+                .withChild(PlatformPatterns.psiElement().withText("tv"))
+                .withParent(jsOrTsVariablePattern)
+                .accepts(element) || jsCallExpressionPattern // there is probably a way to combine these two patterns
+                .withChild(PlatformPatterns.psiElement().withText("cva"))
+                .withParent(jsOrTsVariablePattern)
+                .accepts(element) -> {
+                // tailwind-variants & class-variance-authority
+                depthRecurseChildren(element) { child ->
+                    if (jsLiteralExpressionPattern.accepts(child)) {
+                        val greatGrandparent = child.parent?.parent?.parent ?: return@depthRecurseChildren
+                        if ((greatGrandparent is JSProperty && greatGrandparent.name != "defaultVariants")
+                            || greatGrandparent !is JSProperty
+                        ) {
+                            replaceClassName(child, newClass)
+                        }
+                    }
+                }
+            }
         }
     }
 
