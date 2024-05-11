@@ -88,6 +88,11 @@ class ClassReplacementTests : BasePlatformTestCase() {
         assertEquals(expected, actual)
     }
 
+    fun testFullSvelteVueJSClassReplacement() {
+        val (expected, actual) = beforeAndAfterContents("fullSvelteVue.js")
+        assertEquals(expected, actual)
+    }
+
     fun testFullSimpleVueComponentClassReplacement() {
         val (expected, actual) = beforeAndAfterContents("fullSimple.vue")
         assertEquals(expected, actual)

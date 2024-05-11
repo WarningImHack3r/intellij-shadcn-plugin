@@ -26,7 +26,10 @@ abstract class ClassReplacementVisitor(
     private val jsCallExpressionPattern: PsiElementPattern.Capture<PsiElement> =
         PlatformPatterns.psiElement(JSStubElementTypes.CALL_EXPRESSION)
     private val jsOrTsVariablePattern: PsiElementPattern.Capture<PsiElement> =
-        PlatformPatterns.psiElement(TypeScriptStubElementTypes.TYPESCRIPT_VARIABLE)
+        PlatformPatterns.psiElement().andOr(
+            PlatformPatterns.psiElement(TypeScriptStubElementTypes.TYPESCRIPT_VARIABLE),
+            PlatformPatterns.psiElement(JSStubElementTypes.VARIABLE)
+        )
 
     abstract fun classAttributeNameFromElement(element: PsiElement): String?
 
@@ -61,10 +64,12 @@ abstract class ClassReplacementVisitor(
             }
 
             jsCallExpressionPattern
-                .withChild(PlatformPatterns.psiElement().withText("tv"))
-                .withParent(jsOrTsVariablePattern)
-                .accepts(element) || jsCallExpressionPattern // there is probably a way to combine these two patterns
-                .withChild(PlatformPatterns.psiElement().withText("cva"))
+                .withChild(
+                    PlatformPatterns.psiElement().andOr(
+                        PlatformPatterns.psiElement().withText("tv"),
+                        PlatformPatterns.psiElement().withText("cva")
+                    )
+                )
                 .withParent(jsOrTsVariablePattern)
                 .accepts(element) -> {
                 // tailwind-variants & class-variance-authority
