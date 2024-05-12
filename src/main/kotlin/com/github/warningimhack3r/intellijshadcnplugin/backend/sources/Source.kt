@@ -2,6 +2,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Config
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Component
@@ -10,9 +11,8 @@ import com.github.warningimhack3r.intellijshadcnplugin.notifications.Notificatio
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.PsiFile
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -56,7 +56,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     protected open fun adaptFileExtensionToConfig(extension: String): String = extension
 
-    protected abstract fun adaptFileToConfig(contents: String): String
+    protected abstract fun adaptFileToConfig(file: PsiFile)
 
     protected open fun fetchComponent(componentName: String): ComponentWithContents {
         return RequestSender.sendRequest("$domain/registry/styles/${getLocalConfig().style}/$componentName.json")
@@ -157,13 +157,10 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 }
             }
             downloadedComponent.files.forEach { file ->
-                val psiFile = PsiFileFactory.getInstance(project).createFileFromText(
-                    adaptFileExtensionToConfig(file.name),
-                    FileTypeManager.getInstance().getFileTypeByExtension(
-                        adaptFileExtensionToConfig(file.name).substringAfterLast('.')
-                    ),
-                    adaptFileToConfig(file.content)
+                val psiFile = PsiHelper.createPsiFile(
+                    project, adaptFileExtensionToConfig(file.name), file.content
                 )
+                adaptFileToConfig(psiFile)
                 fileManager.saveFileAtPath(psiFile, path)
             }
         }
@@ -206,13 +203,17 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     open fun isComponentUpToDate(componentName: String): Boolean {
         val remoteComponent = fetchComponent(componentName)
         return remoteComponent.files.all { file ->
+            val psiFile = PsiHelper.createPsiFile(
+                project, adaptFileExtensionToConfig(file.name), file.content
+            )
+            adaptFileToConfig(psiFile)
             (FileManager(project).getFileContentsAtPath(
                 "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${
                     if (usesDirectoriesForComponents()) {
                         "/${remoteComponent.name}"
                     } else ""
                 }/${file.name}"
-            ) == adaptFileToConfig(file.content)).also {
+            ) == psiFile.text).also {
                 log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
             }
         }

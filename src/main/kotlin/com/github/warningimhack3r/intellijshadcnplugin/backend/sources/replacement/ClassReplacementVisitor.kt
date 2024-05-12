@@ -1,21 +1,17 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
 import com.intellij.lang.typescript.TypeScriptStubElementTypes
-import com.intellij.openapi.command.WriteCommandAction
-import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PsiElementPattern
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.xml.XmlTokenType
 
-abstract class ClassReplacementVisitor(
-    private val project: Project,
-    private val newClass: (String) -> String
-) : PsiRecursiveElementVisitor() {
+abstract class ClassReplacementVisitor(private val newClass: (String) -> String) : PsiRecursiveElementVisitor() {
     abstract val attributePattern: PsiElementPattern.Capture<PsiElement>
     abstract val attributeValuePattern: PsiElementPattern.Capture<PsiElement>
 
@@ -88,20 +84,20 @@ abstract class ClassReplacementVisitor(
     }
 
     private fun replaceClassName(element: PsiElement, newText: (String) -> String) {
-        WriteCommandAction.runWriteCommandAction(project) {
-            val quote = when (element.text.first()) {
-                '\'', '`', '"' -> element.text.first().toString()
-                else -> ""
+        val quote = when (element.text.first()) {
+            '\'', '`', '"' -> element.text.first().toString()
+            else -> ""
+        }
+        val classes = element.text
+            .split(" ")
+            .filter { it.isNotEmpty() }
+            .joinToString(" ") {
+                if (quote.isEmpty()) {
+                    newText(it)
+                } else newText(it.replace(Regex(quote), ""))
             }
-            val classes = element.text
-                .split(" ")
-                .filter { it.isNotEmpty() }
-                .joinToString(" ") {
-                    if (quote.isEmpty()) {
-                        newText(it)
-                    } else newText(it.replace(Regex(quote), ""))
-                }
-            val newElement = JSPsiElementFactory.createJSExpression("$quote$classes$quote", element)
+        val newElement = JSPsiElementFactory.createJSExpression("$quote$classes$quote", element)
+        PsiHelper.writeAction(element.containingFile) {
             element.replace(newElement)
         }
     }

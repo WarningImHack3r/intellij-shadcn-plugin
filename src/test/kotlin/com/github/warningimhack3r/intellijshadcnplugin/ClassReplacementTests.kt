@@ -4,7 +4,6 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replaceme
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.SvelteClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
-import com.intellij.openapi.project.Project
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import kotlin.reflect.KClass
@@ -17,14 +16,13 @@ class ClassReplacementTests : BasePlatformTestCase() {
 
     private fun createVisitor(
         visitorClass: KClass<out ClassReplacementVisitor>,
-        project: Project,
         newClass: (String) -> String
     ): ClassReplacementVisitor {
         val constructor = visitorClass.primaryConstructor
-        if (constructor != null && constructor.parameters.size == 2) {
-            return constructor.call(project, newClass)
+        if (constructor != null && constructor.parameters.size == 1) {
+            return constructor.call(newClass)
         } else {
-            throw IllegalArgumentException("Invalid visitor class. It should have a primary constructor with two parameters.")
+            throw IllegalArgumentException("Invalid visitor class. It should have a primary constructor with 1 parameter.")
         }
     }
 
@@ -36,7 +34,7 @@ class ClassReplacementTests : BasePlatformTestCase() {
             "vue" -> VueClassReplacementVisitor::class
             else -> throw IllegalArgumentException("Unsupported extension: $extension")
         }
-        val visitor = createVisitor(visitorClass, project) { "a-$it" }
+        val visitor = createVisitor(visitorClass) { "a-$it" }
         file.accept(visitor)
         return Pair(myFixture.configureByFile(fileName.let {
             it.substringBeforeLast('.') + "_after." + it.substringAfterLast('.')

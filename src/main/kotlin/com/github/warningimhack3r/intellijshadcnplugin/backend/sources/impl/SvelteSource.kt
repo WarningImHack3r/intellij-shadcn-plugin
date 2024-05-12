@@ -2,6 +2,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.ShellRunner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
@@ -11,6 +12,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.notifications.Notificatio
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiFile
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -81,12 +83,15 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
         } else extension
     }
 
-    override fun adaptFileToConfig(contents: String): String {
+    override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        return contents.replace(
+        val newContents = file.text.replace(
             Regex("([\"'])[^\r\n/]+/registry/[^/]+"), "$1${cleanAlias(config.aliases.components)}"
         ).replace(
             "\$lib/utils", config.aliases.utils
         )
+        PsiHelper.writeAction(file, "Replacing imports") {
+            file.replace(PsiHelper.createPsiFile(project, file.fileType, newContents))
+        }
     }
 }

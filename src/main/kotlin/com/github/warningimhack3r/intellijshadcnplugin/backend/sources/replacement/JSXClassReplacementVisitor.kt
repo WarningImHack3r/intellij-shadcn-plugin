@@ -2,16 +2,12 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacem
 
 import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.psi.e4x.impl.JSXmlAttributeImpl
-import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PsiElementPattern
 import com.intellij.psi.PsiElement
 import com.intellij.psi.xml.XmlElementType
 
-class JSXClassReplacementVisitor(
-    project: Project,
-    newClass: (String) -> String
-) : ClassReplacementVisitor(project, newClass) {
+class JSXClassReplacementVisitor(newClass: (String) -> String) : ClassReplacementVisitor(newClass) {
     override val attributePattern: PsiElementPattern.Capture<PsiElement> =
         PlatformPatterns.psiElement(JSStubElementTypes.XML_ATTRIBUTE)
     override val attributeValuePattern: PsiElementPattern.Capture<PsiElement> =
