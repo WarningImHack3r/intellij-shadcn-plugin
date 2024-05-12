@@ -1,9 +1,9 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
-import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SolidConfig
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -44,17 +44,13 @@ class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.s
 
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        // Note: this does not prevent additional imports other than "cn" from being replaced,
-        // but I'm following what the original code does for parity
-        // (https://github.com/hngngn/shadcn-solid/blob/b808e0ecc9fd4689572d9fc0dfb7af81606a11f2/packages/cli/src/utils/transformers/transform-import.ts#L20-L29).
-        val newContents = Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"(@/lib/cn).*").replace(
-            file.text.replace(
-                Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
-            )
-        ) { it.groupValues[0].replace(it.groupValues[1], config.aliases.utils) }
-        PsiHelper.writeAction(file, "Replacing imports") {
-            file.replace(PsiHelper.createPsiFile(project, file.fileType, newContents))
-        }
+
+        file.accept(ImportsPackagesReplacementVisitor visitor@{ import ->
+            if (import == "@/libs/cn") {
+                return@visitor config.aliases.utils
+            }
+            import
+        })
 
         if (!config.tailwind.cssVariables) {
             val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")

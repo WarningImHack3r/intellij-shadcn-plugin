@@ -4,11 +4,11 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManag
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.ReactConfig
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import com.intellij.util.applyIf
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -53,30 +53,34 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
 
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        // Note: this does not prevent additional imports other than "cn" from being replaced,
-        // but I'm once again following what the original code does for parity
-        // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L25-L35).
-        val newContents = Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"(@/lib/cn).*").replace(
-            // Note: this condition does not replace UI paths (= $components/$ui) by the components path
-            // if the UI alias is not set.
-            // For me, this is a bug, but I'm following what the original code does for parity
-            // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L10-L23).
-            if (config.aliases.ui != null) {
-                file.text.replace(
-                    Regex("@/registry/[^/]+/ui"), cleanAlias(config.aliases.ui)
+
+        file.accept(ImportsPackagesReplacementVisitor visitor@{ import ->
+            if (import.startsWith("@/registry/")) {
+                return@visitor if (config.aliases.ui != null) {
+                    import.replace(Regex("^@/registry/[^/]+/ui"), config.aliases.ui)
+                } else {
+                    import.replace(
+                        Regex("^@/registry/[^/]+"),
+                        config.aliases.components,
+                    )
+                }
+            } else if (import == "@/lib/utils") {
+                return@visitor config.aliases.utils
+            }
+            import
+        })
+
+        if (config.rsc) {
+            PsiHelper.writeAction(file, "Replacing imports") {
+                file.replace(
+                    PsiHelper.createPsiFile(
+                        project, file.fileType, file.text
+                            .replace(
+                                Regex("\"use client\";*\n"), ""
+                            )
+                    )
                 )
-            } else file.text.replace(
-                Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
-            )
-        ) { result ->
-            result.groupValues[0].replace(result.groupValues[1], config.aliases.utils)
-        }.applyIf(config.rsc) {
-            replace(
-                Regex("\"use client\";*\n"), ""
-            )
-        }
-        PsiHelper.writeAction(file, "Replacing imports") {
-            file.replace(PsiHelper.createPsiFile(project, file.fileType, newContents))
+            }
         }
 
         val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")

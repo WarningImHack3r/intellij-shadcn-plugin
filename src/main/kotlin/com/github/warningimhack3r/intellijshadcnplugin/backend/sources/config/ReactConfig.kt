@@ -14,11 +14,11 @@ import kotlinx.serialization.Serializable
 @Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117")
 @Serializable
 class ReactConfig(
-    override val `$schema`: String,
+    override val `$schema`: String = "https://ui.shadcn.com/schema.json",
     override val style: String,
-    override val tailwind: Tailwind,
-    val rsc: Boolean,
+    val rsc: Boolean = false,
     val tsx: Boolean = true,
+    override val tailwind: Tailwind,
     override val aliases: Aliases
 ) : Config() {
 
@@ -35,7 +35,7 @@ class ReactConfig(
         override val config: String,
         override val css: String,
         override val baseColor: String,
-        val cssVariables: Boolean,
+        val cssVariables: Boolean = true,
         val prefix: String = ""
     ) : Config.Tailwind()
 

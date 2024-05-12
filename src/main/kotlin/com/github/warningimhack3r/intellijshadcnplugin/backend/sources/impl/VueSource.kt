@@ -1,10 +1,10 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
-import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.VueConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
@@ -72,17 +72,6 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
 
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        // Note: this does not prevent additional imports other than "cn" from being replaced,
-        // but I'm following what the original code does for parity
-        // (https://github.com/radix-vue/shadcn-vue/blob/9d9a6f929ce0f281b4af36161af80ed2bbdc4a16/packages/cli/src/utils/transformers/transform-import.ts#L19-L29).
-        val newContents = Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"(@/lib/cn).*").replace(
-            file.text.replace(
-                Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
-            )
-        ) { result ->
-            result.groupValues[0].replace(result.groupValues[1], cleanAlias(config.aliases.utils))
-        }
-
         if (!config.typescript) {
             NotificationManager(project).sendNotification(
                 "TypeScript option for Vue",
@@ -91,9 +80,22 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             )
             // TODO: detype Vue file
         }
-        PsiHelper.writeAction(file, "Replacing imports") {
-            file.replace(PsiHelper.createPsiFile(project, file.fileType, newContents))
-        }
+
+        file.accept(ImportsPackagesReplacementVisitor visitor@{ import ->
+            if (import.startsWith("@/lib/registry/")) {
+                return@visitor if (config.aliases.ui != null) {
+                    import.replace(Regex("^@/lib/registry/[^/]+/ui"), config.aliases.ui)
+                } else {
+                    import.replace(
+                        Regex("^@/lib/registry/[^/]+"),
+                        config.aliases.components,
+                    )
+                }
+            } else if (import == "@/lib/utils") {
+                return@visitor config.aliases.utils
+            }
+            import
+        })
 
         if (!config.tailwind.cssVariables) {
             val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
@@ -110,17 +112,18 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             file.accept(VueClassReplacementVisitor visitor@{ `class` ->
                 val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
                 val className = `class`.substringAfterLast(":")
+                val twPrefix = config.tailwind.prefix
                 if (className == "border") {
-                    return@visitor "${modifier}border ${modifier}border-border"
+                    return@visitor "${modifier}${twPrefix}border ${modifier}${twPrefix}border-border"
                 }
                 val prefix = prefixesToReplace.find { className.startsWith(it) }
-                    ?: return@visitor "$modifier$className"
+                    ?: return@visitor "$modifier$twPrefix$className"
                 val color = className.substringAfter(prefix)
                 val lightColor = lightColors[color]
                 val darkColor = darkColors[color]
                 if (lightColor != null && darkColor != null) {
-                    "$modifier$prefix$lightColor dark:$modifier$prefix$darkColor"
-                } else "$modifier$className"
+                    "$modifier$twPrefix$prefix$lightColor dark:$modifier$twPrefix$prefix$darkColor"
+                } else "$modifier$twPrefix$className"
             })
         }
     }

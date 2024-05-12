@@ -12,12 +12,13 @@ import kotlinx.serialization.Serializable
  * @param framework The Vue framework to use.
  * @param aliases The aliases for the components and utils directories.
  */
-@Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117")
+@Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117", "unused")
 @Serializable
 class VueConfig(
     override val `$schema`: String = "https://shadcn-vue.com/schema.json",
     override val style: String,
     val typescript: Boolean = true,
+    val tsConfigPath: String = "./tsconfig.json",
     override val tailwind: Tailwind,
     val framework: Framework = Framework.VITE,
     override val aliases: Aliases
@@ -35,7 +36,8 @@ class VueConfig(
         override val config: String,
         override val css: String,
         override val baseColor: String,
-        open val cssVariables: Boolean = true
+        val cssVariables: Boolean = true,
+        val prefix: String = ""
     ) : Config.Tailwind()
 
     /**
@@ -61,5 +63,6 @@ class VueConfig(
     class Aliases(
         override val components: String,
         override val utils: String,
+        val ui: String? = null
     ) : Config.Aliases()
 }

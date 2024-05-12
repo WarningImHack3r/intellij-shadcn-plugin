@@ -2,12 +2,12 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
-import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.ShellRunner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.diagnostic.logger
@@ -85,13 +85,10 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
 
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        val newContents = file.text.replace(
-            Regex("([\"'])[^\r\n/]+/registry/[^/]+"), "$1${cleanAlias(config.aliases.components)}"
-        ).replace(
-            "\$lib/utils", config.aliases.utils
-        )
-        PsiHelper.writeAction(file, "Replacing imports") {
-            file.replace(PsiHelper.createPsiFile(project, file.fileType, newContents))
-        }
+        file.accept(ImportsPackagesReplacementVisitor { import ->
+            import
+                .replace(Regex("\\\$lib/registry/[^/]+"), config.aliases.components)
+                .replace("\$lib/utils", config.aliases.components)
+        })
     }
 }
