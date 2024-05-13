@@ -4,11 +4,17 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.intellij.lang.ecmascript6.ES6StubElementTypes
 import com.intellij.lang.javascript.JSTokenTypes
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
+import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementVisitor
+import com.intellij.psi.SmartPointerManager
+import com.intellij.psi.SmartPsiElementPointer
 
-class ImportsPackagesReplacementVisitor(private val newImport: (String) -> String) : PsiRecursiveElementVisitor() {
+class ImportsPackagesReplacementVisitor(project: Project) : PsiRecursiveElementVisitor() {
+    private val matchingElements = mutableListOf<SmartPsiElementPointer<PsiElement>>()
+    private val smartPointerManager = SmartPointerManager.getInstance(project)
 
     override fun visitElement(element: PsiElement) {
         super.visitElement(element)
@@ -17,7 +23,17 @@ class ImportsPackagesReplacementVisitor(private val newImport: (String) -> Strin
                 .withParent(PlatformPatterns.psiElement(ES6StubElementTypes.FROM_CLAUSE))
                 .accepts(element)
         ) {
-            replaceImport(element, newImport)
+            matchingElements.add(smartPointerManager.createSmartPsiElementPointer(element, element.containingFile))
+        }
+    }
+
+    @Suppress("UnstableApiUsage")
+    fun replaceImports(newText: (String) -> String) {
+        runWriteAction {
+            matchingElements.forEach { element ->
+                val psiElement = element.dereference() ?: return@forEach
+                replaceImport(psiElement, newText)
+            }
         }
     }
 

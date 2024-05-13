@@ -1,11 +1,12 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
-import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.ReactConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ReactDirectiveRemovalVisitor
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -54,33 +55,30 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
 
-        file.accept(ImportsPackagesReplacementVisitor visitor@{ import ->
-            if (import.startsWith("@/registry/")) {
+        val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
+        runReadAction { file.accept(importsPackagesReplacementVisitor) }
+        importsPackagesReplacementVisitor.replaceImports visitor@{ `package` ->
+            if (`package`.startsWith("@/registry/")) {
                 return@visitor if (config.aliases.ui != null) {
-                    import.replace(Regex("^@/registry/[^/]+/ui"), config.aliases.ui)
+                    `package`.replace(Regex("^@/registry/[^/]+/ui"), config.aliases.ui)
                 } else {
-                    import.replace(
+                    `package`.replace(
                         Regex("^@/registry/[^/]+"),
                         config.aliases.components,
                     )
                 }
-            } else if (import == "@/lib/utils") {
+            } else if (`package` == "@/lib/utils") {
                 return@visitor config.aliases.utils
             }
-            import
-        })
+            `package`
+        }
 
         if (config.rsc) {
-            PsiHelper.writeAction(file, "Replacing imports") {
-                file.replace(
-                    PsiHelper.createPsiFile(
-                        project, file.fileType, file.text
-                            .replace(
-                                Regex("\"use client\";*\n"), ""
-                            )
-                    )
-                )
+            val directiveVisitor = ReactDirectiveRemovalVisitor(project) { directive ->
+                directive == "use client"
             }
+            runReadAction { file.accept(directiveVisitor) }
+            directiveVisitor.removeMatchingElements()
         }
 
         val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
@@ -94,21 +92,23 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
             darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
         } ?: emptyMap()
 
-        file.accept(JSXClassReplacementVisitor visitor@{ `class` ->
+        val replacementVisitor = JSXClassReplacementVisitor(project)
+        runReadAction { file.accept(replacementVisitor) }
+        replacementVisitor.replaceClasses replacer@{ `class` ->
             val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
             val className = `class`.substringAfterLast(":")
             val twPrefix = config.tailwind.prefix
             if (className == "border") {
-                return@visitor "${modifier}${twPrefix}border ${modifier}${twPrefix}border-border"
+                return@replacer "${modifier}${twPrefix}border ${modifier}${twPrefix}border-border"
             }
             val prefix = prefixesToReplace.find { className.startsWith(it) }
-                ?: return@visitor "$modifier$twPrefix$className"
+                ?: return@replacer "$modifier$twPrefix$className"
             val color = className.substringAfter(prefix)
             val lightColor = lightColors[color]
             val darkColor = darkColors[color]
             if (lightColor != null && darkColor != null) {
                 "$modifier$twPrefix$prefix$lightColor dark:$modifier$twPrefix$prefix$darkColor"
             } else "$modifier$twPrefix$className"
-        })
+        }
     }
 }

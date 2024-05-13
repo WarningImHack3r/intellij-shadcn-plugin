@@ -11,7 +11,9 @@ class ImportsReplacementTests : BasePlatformTestCase() {
 
     private fun beforeAndAfterContents(fileName: String): Pair<String, String> {
         val file = myFixture.configureByFile(fileName)
-        file.accept(ImportsPackagesReplacementVisitor { "a-$it" })
+        val visitor = ImportsPackagesReplacementVisitor(project)
+        file.accept(visitor)
+        visitor.replaceImports { "a-$it" }
         return Pair(myFixture.configureByFile(fileName.let {
             it.substringBeforeLast('.') + "_after." + it.substringAfterLast('.')
         }).text, file.text)

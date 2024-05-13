@@ -1,5 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
 
+import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PsiElementPattern
 import com.intellij.psi.PsiElement
@@ -7,7 +8,7 @@ import com.intellij.psi.xml.XmlElementType
 import dev.blachut.svelte.lang.psi.SvelteHtmlAttribute
 import dev.blachut.svelte.lang.psi.SvelteHtmlElementTypes
 
-class SvelteClassReplacementVisitor(newClass: (String) -> String) : ClassReplacementVisitor(newClass) {
+class SvelteClassReplacementVisitor(project: Project) : ClassReplacementVisitor(project) {
     override val attributePattern: PsiElementPattern.Capture<PsiElement> =
         PlatformPatterns.psiElement(SvelteHtmlElementTypes.SVELTE_HTML_ATTRIBUTE)
     override val attributeValuePattern: PsiElementPattern.Capture<PsiElement> =

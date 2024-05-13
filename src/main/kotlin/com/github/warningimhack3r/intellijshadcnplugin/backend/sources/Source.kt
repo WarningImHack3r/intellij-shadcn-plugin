@@ -9,6 +9,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Co
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -49,10 +50,6 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     protected abstract fun usesDirectoriesForComponents(): Boolean
 
     protected abstract fun resolveAlias(alias: String): String
-
-    protected fun cleanAlias(alias: String): String = if (alias.startsWith("\$")) {
-        "\\$alias" // fixes Kotlin silently crashing when the replacement starts with $ with a regex
-    } else alias
 
     protected open fun adaptFileExtensionToConfig(extension: String): String = extension
 
@@ -203,9 +200,11 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     open fun isComponentUpToDate(componentName: String): Boolean {
         val remoteComponent = fetchComponent(componentName)
         return remoteComponent.files.all { file ->
-            val psiFile = PsiHelper.createPsiFile(
-                project, adaptFileExtensionToConfig(file.name), file.content
-            )
+            val psiFile = runReadAction {
+                PsiHelper.createPsiFile(
+                    project, adaptFileExtensionToConfig(file.name), file.content
+                )
+            }
             adaptFileToConfig(psiFile)
             (FileManager(project).getFileContentsAtPath(
                 "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${

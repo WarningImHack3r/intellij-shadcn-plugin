@@ -1,7 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.ui
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.ui.components.JBScrollPane
@@ -52,7 +51,7 @@ class ISPWindowContents(private val source: Source<*>) {
         val coroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         var installedComponents = emptyList<String>()
         coroutineScope.launch {
-            installedComponents = runReadAction { source.getInstalledComponents() }
+            installedComponents = source.getInstalledComponents()
         }.invokeOnCompletion { throwable ->
             if (throwable != null && throwable !is CancellationException) {
                 return@invokeOnCompletion
@@ -60,7 +59,7 @@ class ISPWindowContents(private val source: Source<*>) {
             // Add a component panel
             add(createPanel("Add a component") {
                 coroutineScope.async {
-                    runReadAction { source.fetchAllComponents() }.map { component ->
+                    source.fetchAllComponents().map { component ->
                         Item(
                             component.name,
                             "${
@@ -90,9 +89,7 @@ class ISPWindowContents(private val source: Source<*>) {
             // Manage components panel
             add(createPanel("Manage components", coroutineScope.async {
                 val shouldDisplay =
-                    runReadAction {
-                        installedComponents.any { component -> !source.isComponentUpToDate(component) }
-                    }
+                    installedComponents.any { component -> !source.isComponentUpToDate(component) }
                 if (shouldDisplay) {
                     JButton("Update all").apply {
                         addActionListener {
@@ -118,7 +115,7 @@ class ISPWindowContents(private val source: Source<*>) {
                                 LabeledAction("Update", CompletionAction.REMOVE_TRIGGER) {
                                     runWriteAction { source.addComponent(component) }
                                 }.takeIf {
-                                    runReadAction { !source.isComponentUpToDate(component) }
+                                    !source.isComponentUpToDate(component)
                                 },
                                 LabeledAction("Remove", CompletionAction.REMOVE_ROW) {
                                     runWriteAction { source.removeComponent(component) }

@@ -1,5 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -51,10 +52,12 @@ class FileManager(private val project: Project) {
             // a simple call to FilenameIndex.getVirtualFilesByName.
             // This is a dirty workaround to make it work on production,
             // because it works fine during local development.
-            FilenameIndex.getVirtualFilesByName(
-                "components.json",
-                GlobalSearchScope.projectScope(project)
-            ).firstOrNull().also {
+            runReadAction {
+                FilenameIndex.getVirtualFilesByName(
+                    "components.json",
+                    GlobalSearchScope.projectScope(project)
+                )
+            }.firstOrNull().also {
                 if (it == null) {
                     log.warn("components.json not found with the workaround")
                 }
@@ -64,10 +67,12 @@ class FileManager(private val project: Project) {
                 log.warn("No file named $name found with the workaround")
             }
         } else {
-            FilenameIndex.getVirtualFilesByName(
-                name,
-                GlobalSearchScope.projectScope(project)
-            )
+            runReadAction {
+                FilenameIndex.getVirtualFilesByName(
+                    name,
+                    GlobalSearchScope.projectScope(project)
+                )
+            }
         }).filter { file ->
             !file.path.contains("/node_modules/") && !file.path.contains("/.git/")
         }.sortedBy { file ->

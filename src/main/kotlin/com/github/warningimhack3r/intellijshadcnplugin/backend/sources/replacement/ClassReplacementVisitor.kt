@@ -5,13 +5,20 @@ import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
 import com.intellij.lang.typescript.TypeScriptStubElementTypes
+import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PsiElementPattern
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementVisitor
+import com.intellij.psi.SmartPointerManager
+import com.intellij.psi.SmartPsiElementPointer
 import com.intellij.psi.xml.XmlTokenType
 
-abstract class ClassReplacementVisitor(private val newClass: (String) -> String) : PsiRecursiveElementVisitor() {
+abstract class ClassReplacementVisitor(project: Project) : PsiRecursiveElementVisitor() {
+    private val matchingElements = mutableListOf<SmartPsiElementPointer<PsiElement>>()
+    private val smartPointerManager = SmartPointerManager.getInstance(project)
+
     abstract val attributePattern: PsiElementPattern.Capture<PsiElement>
     abstract val attributeValuePattern: PsiElementPattern.Capture<PsiElement>
 
@@ -36,6 +43,10 @@ abstract class ClassReplacementVisitor(private val newClass: (String) -> String)
         }
     }
 
+    private fun saveMatchingElement(psiElement: PsiElement) {
+        matchingElements.add(smartPointerManager.createSmartPsiElementPointer(psiElement, psiElement.containingFile))
+    }
+
     override fun visitElement(element: PsiElement) {
         super.visitElement(element)
 
@@ -47,7 +58,7 @@ abstract class ClassReplacementVisitor(private val newClass: (String) -> String)
                 // Regular string attribute value
                 val attributeName = classAttributeNameFromElement(element.parent) ?: return
                 if (attributeName != "className" && attributeName != "class") return
-                replaceClassName(element, newClass)
+                saveMatchingElement(element)
             }
 
             jsLiteralExpressionPattern
@@ -56,7 +67,7 @@ abstract class ClassReplacementVisitor(private val newClass: (String) -> String)
                 .withAncestor(6, attributePattern)
                 .accepts(element) -> {
                 // String literal directly inside a function call
-                replaceClassName(element, newClass)
+                saveMatchingElement(element)
             }
 
             jsCallExpressionPattern
@@ -75,10 +86,20 @@ abstract class ClassReplacementVisitor(private val newClass: (String) -> String)
                         if ((greatGrandparent is JSProperty && greatGrandparent.name != "defaultVariants")
                             || greatGrandparent !is JSProperty
                         ) {
-                            replaceClassName(child, newClass)
+                            saveMatchingElement(child)
                         }
                     }
                 }
+            }
+        }
+    }
+
+    @Suppress("UnstableApiUsage")
+    fun replaceClasses(newText: (String) -> String) {
+        runWriteAction {
+            matchingElements.forEach { element ->
+                val psiElement = element.dereference() ?: return@forEach
+                replaceClassName(psiElement, newText)
             }
         }
     }

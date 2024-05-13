@@ -10,6 +10,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Co
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -85,10 +86,12 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
 
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        file.accept(ImportsPackagesReplacementVisitor { import ->
-            import
+        val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
+        runReadAction { file.accept(importsPackagesReplacementVisitor) }
+        importsPackagesReplacementVisitor.replaceImports { `package` ->
+            `package`
                 .replace(Regex("\\\$lib/registry/[^/]+"), config.aliases.components)
                 .replace("\$lib/utils", config.aliases.components)
-        })
+        }
     }
 }

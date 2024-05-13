@@ -8,6 +8,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replaceme
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -81,21 +82,23 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             // TODO: detype Vue file
         }
 
-        file.accept(ImportsPackagesReplacementVisitor visitor@{ import ->
-            if (import.startsWith("@/lib/registry/")) {
-                return@visitor if (config.aliases.ui != null) {
-                    import.replace(Regex("^@/lib/registry/[^/]+/ui"), config.aliases.ui)
+        val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
+        runReadAction { file.accept(importsPackagesReplacementVisitor) }
+        importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
+            if (`package`.startsWith("@/lib/registry/")) {
+                return@replacer if (config.aliases.ui != null) {
+                    `package`.replace(Regex("^@/lib/registry/[^/]+/ui"), config.aliases.ui)
                 } else {
-                    import.replace(
+                    `package`.replace(
                         Regex("^@/lib/registry/[^/]+"),
                         config.aliases.components,
                     )
                 }
-            } else if (import == "@/lib/utils") {
-                return@visitor config.aliases.utils
+            } else if (`package` == "@/lib/utils") {
+                return@replacer config.aliases.utils
             }
-            import
-        })
+            `package`
+        }
 
         if (!config.tailwind.cssVariables) {
             val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
@@ -109,22 +112,24 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
                 darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
             } ?: emptyMap()
 
-            file.accept(VueClassReplacementVisitor visitor@{ `class` ->
+            val classReplacementVisitor = VueClassReplacementVisitor(project)
+            runReadAction { file.accept(classReplacementVisitor) }
+            classReplacementVisitor.replaceClasses replacer@{ `class` ->
                 val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
                 val className = `class`.substringAfterLast(":")
                 val twPrefix = config.tailwind.prefix
                 if (className == "border") {
-                    return@visitor "${modifier}${twPrefix}border ${modifier}${twPrefix}border-border"
+                    return@replacer "${modifier}${twPrefix}border ${modifier}${twPrefix}border-border"
                 }
                 val prefix = prefixesToReplace.find { className.startsWith(it) }
-                    ?: return@visitor "$modifier$twPrefix$className"
+                    ?: return@replacer "$modifier$twPrefix$className"
                 val color = className.substringAfter(prefix)
                 val lightColor = lightColors[color]
                 val darkColor = darkColors[color]
                 if (lightColor != null && darkColor != null) {
                     "$modifier$twPrefix$prefix$lightColor dark:$modifier$twPrefix$prefix$darkColor"
                 } else "$modifier$twPrefix$className"
-            })
+            }
         }
     }
 

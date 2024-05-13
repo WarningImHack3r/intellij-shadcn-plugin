@@ -5,6 +5,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SolidConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -45,12 +46,14 @@ class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.s
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
 
-        file.accept(ImportsPackagesReplacementVisitor visitor@{ import ->
-            if (import == "@/libs/cn") {
+        val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
+        runReadAction { file.accept(importsPackagesReplacementVisitor) }
+        importsPackagesReplacementVisitor.replaceImports visitor@{ `package` ->
+            if (`package` == "@/libs/cn") {
                 return@visitor config.aliases.utils
             }
-            import
-        })
+            `package`
+        }
 
         if (!config.tailwind.cssVariables) {
             val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
@@ -64,21 +67,23 @@ class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.s
                 darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
             } ?: emptyMap()
 
-            file.accept(JSXClassReplacementVisitor visitor@{ `class` ->
+            val replacementVisitor = JSXClassReplacementVisitor(project)
+            runReadAction { file.accept(replacementVisitor) }
+            replacementVisitor.replaceClasses replacer@{ `class` ->
                 val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
                 val className = `class`.substringAfterLast(":")
                 if (className == "border") {
-                    return@visitor "${modifier}border ${modifier}border-border"
+                    return@replacer "${modifier}border ${modifier}border-border"
                 }
                 val prefix = prefixesToReplace.find { className.startsWith(it) }
-                    ?: return@visitor "$modifier$className"
+                    ?: return@replacer "$modifier$className"
                 val color = className.substringAfter(prefix)
                 val lightColor = lightColors[color]
                 val darkColor = darkColors[color]
                 if (lightColor != null && darkColor != null) {
                     "$modifier$prefix$lightColor dark:$modifier$prefix$darkColor"
                 } else "$modifier$className"
-            })
+            }
         }
     }
 }

@@ -14,13 +14,10 @@ class ClassReplacementTests : BasePlatformTestCase() {
 
     override fun getTestDataPath() = "src/test/testData/classReplacement"
 
-    private fun createVisitor(
-        visitorClass: KClass<out ClassReplacementVisitor>,
-        newClass: (String) -> String
-    ): ClassReplacementVisitor {
+    private fun createVisitor(visitorClass: KClass<out ClassReplacementVisitor>): ClassReplacementVisitor {
         val constructor = visitorClass.primaryConstructor
         if (constructor != null && constructor.parameters.size == 1) {
-            return constructor.call(newClass)
+            return constructor.call(project)
         } else {
             throw IllegalArgumentException("Invalid visitor class. It should have a primary constructor with 1 parameter.")
         }
@@ -34,8 +31,9 @@ class ClassReplacementTests : BasePlatformTestCase() {
             "vue" -> VueClassReplacementVisitor::class
             else -> throw IllegalArgumentException("Unsupported extension: $extension")
         }
-        val visitor = createVisitor(visitorClass) { "a-$it" }
+        val visitor = createVisitor(visitorClass)
         file.accept(visitor)
+        visitor.replaceClasses { "a-$it" }
         return Pair(myFixture.configureByFile(fileName.let {
             it.substringBeforeLast('.') + "_after." + it.substringAfterLast('.')
         }).text, file.text)
