@@ -4,6 +4,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
+import com.intellij.util.SlowOperations
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.*
 import kotlinx.coroutines.future.asCompletableFuture
@@ -69,7 +70,9 @@ class ISPWindowContents(private val source: Source<*>) {
                             } component for ${source.framework}",
                             listOf(
                                 LabeledAction("Add", CompletionAction.DISABLE_ROW) {
-                                    source.addComponent(component.name)
+                                    SlowOperations.allowSlowOperations<Throwable> {
+                                        source.addComponent(component.name)
+                                    }
                                 }
                             ),
                             installedComponents.contains(component.name)
@@ -93,8 +96,10 @@ class ISPWindowContents(private val source: Source<*>) {
                     JButton("Update all").apply {
                         addActionListener {
                             isEnabled = false
-                            installedComponents.forEach { component ->
-                                source.addComponent(component)
+                            SlowOperations.allowSlowOperations<Throwable> {
+                                installedComponents.forEach { component ->
+                                    source.addComponent(component)
+                                }
                             }
                             // TODO: Update the list's row actions
                             val par = parent
@@ -112,12 +117,16 @@ class ISPWindowContents(private val source: Source<*>) {
                             null,
                             listOfNotNull(
                                 LabeledAction("Update", CompletionAction.REMOVE_TRIGGER) {
-                                    source.addComponent(component)
+                                    SlowOperations.allowSlowOperations<Throwable> {
+                                        source.addComponent(component)
+                                    }
                                 }.takeIf {
                                     !source.isComponentUpToDate(component)
                                 },
                                 LabeledAction("Remove", CompletionAction.REMOVE_ROW) {
-                                    source.removeComponent(component)
+                                    SlowOperations.allowSlowOperations<Throwable> {
+                                        source.removeComponent(component)
+                                    }
                                 }
                             )
                         )
