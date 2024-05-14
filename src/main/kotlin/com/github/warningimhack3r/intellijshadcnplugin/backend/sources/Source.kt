@@ -10,7 +10,6 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Co
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -131,7 +130,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                         listOf(
                             NotificationAction.createSimple("Remove " + if (multipleFiles) "them" else "it") {
                                 remotelyDeletedFiles.forEach { file ->
-                                    runWriteAction { fileManager.deleteFile(file) }
+                                    fileManager.deleteFile(file)
                                 }
                                 log.info(
                                     "Removed deprecated file${if (multipleFiles) "s" else ""} from ${downloadedComponent.name} (${
@@ -199,20 +198,21 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     open fun isComponentUpToDate(componentName: String): Boolean {
         val remoteComponent = fetchComponent(componentName)
+        val componentPath =
+            "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${
+                if (usesDirectoriesForComponents()) {
+                    "/${remoteComponent.name}"
+                } else ""
+            }"
+        val fileManager = FileManager(project)
         return remoteComponent.files.all { file ->
-            val psiFile = runReadAction {
-                PsiHelper.createPsiFile(
-                    project, adaptFileExtensionToConfig(file.name), file.content
-                )
-            }
+            val psiFile = PsiHelper.createPsiFile(
+                project, adaptFileExtensionToConfig(file.name), file.content
+            )
             adaptFileToConfig(psiFile)
-            (FileManager(project).getFileContentsAtPath(
-                "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${
-                    if (usesDirectoriesForComponents()) {
-                        "/${remoteComponent.name}"
-                    } else ""
-                }/${file.name}"
-            ) == psiFile.text).also {
+            (fileManager.getFileContentsAtPath("$componentPath/${file.name}") == runReadAction {
+                psiFile.text
+            }).also {
                 log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
             }
         }

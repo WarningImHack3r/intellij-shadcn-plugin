@@ -1,7 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.ui
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
-import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
@@ -70,7 +69,7 @@ class ISPWindowContents(private val source: Source<*>) {
                             } component for ${source.framework}",
                             listOf(
                                 LabeledAction("Add", CompletionAction.DISABLE_ROW) {
-                                    runWriteAction { source.addComponent(component.name) }
+                                    source.addComponent(component.name)
                                 }
                             ),
                             installedComponents.contains(component.name)
@@ -95,7 +94,7 @@ class ISPWindowContents(private val source: Source<*>) {
                         addActionListener {
                             isEnabled = false
                             installedComponents.forEach { component ->
-                                runWriteAction { source.addComponent(component) }
+                                source.addComponent(component)
                             }
                             // TODO: Update the list's row actions
                             val par = parent
@@ -113,12 +112,12 @@ class ISPWindowContents(private val source: Source<*>) {
                             null,
                             listOfNotNull(
                                 LabeledAction("Update", CompletionAction.REMOVE_TRIGGER) {
-                                    runWriteAction { source.addComponent(component) }
+                                    source.addComponent(component)
                                 }.takeIf {
                                     !source.isComponentUpToDate(component)
                                 },
                                 LabeledAction("Remove", CompletionAction.REMOVE_ROW) {
-                                    runWriteAction { source.removeComponent(component) }
+                                    source.removeComponent(component)
                                 }
                             )
                         )

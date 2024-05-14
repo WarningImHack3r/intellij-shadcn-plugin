@@ -63,12 +63,12 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
     }
 
     override fun adaptFileExtensionToConfig(extension: String): String {
-        return if (!getLocalConfig().typescript) {
+        return if (getLocalConfig().typescript) extension else {
             extension.replace(
                 Regex("\\.ts$"),
                 ".js"
             )
-        } else extension
+        }
     }
 
     override fun adaptFileToConfig(file: PsiFile) {

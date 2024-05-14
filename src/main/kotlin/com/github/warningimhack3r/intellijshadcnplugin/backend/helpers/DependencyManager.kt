@@ -2,7 +2,6 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
-import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.Json
@@ -22,9 +21,7 @@ class DependencyManager(private val project: Project) {
             "yarn.lock" to "yarn",
             "bun.lockb" to "bun"
         ).filter {
-            runReadAction {
-                fileManager.getVirtualFilesByName(it.key).isNotEmpty()
-            }
+            fileManager.getVirtualFilesByName(it.key).isNotEmpty()
         }.values.firstOrNull()
     }
 

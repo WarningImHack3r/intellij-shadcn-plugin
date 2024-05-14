@@ -73,7 +73,7 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
             `package`
         }
 
-        if (config.rsc) {
+        if (!config.rsc) {
             val directiveVisitor = ReactDirectiveRemovalVisitor(project) { directive ->
                 directive == "use client"
             }

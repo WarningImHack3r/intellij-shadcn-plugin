@@ -4,7 +4,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.intellij.lang.javascript.JSElementTypes
 import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.JSTokenTypes
-import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.*
@@ -49,13 +49,10 @@ class ReactDirectiveRemovalVisitor(
 
     @Suppress("UnstableApiUsage")
     fun removeMatchingElements() {
-        runWriteAction {
-            matchingElements.forEach { element ->
-                element.containingFile?.let {
-                    PsiHelper.writeAction(it) {
-                        element.dereference()?.delete()
-                    }
-                }
+        matchingElements.forEach { element ->
+            val psiElement = runReadAction { element.dereference() } ?: return
+            PsiHelper.writeAction(runReadAction { psiElement.containingFile }) {
+                psiElement.delete()
             }
         }
     }

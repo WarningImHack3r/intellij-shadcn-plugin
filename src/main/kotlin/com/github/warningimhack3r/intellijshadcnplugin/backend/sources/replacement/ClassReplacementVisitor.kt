@@ -5,7 +5,7 @@ import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
 import com.intellij.lang.typescript.TypeScriptStubElementTypes
-import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.patterns.PsiElementPattern
@@ -96,11 +96,9 @@ abstract class ClassReplacementVisitor(project: Project) : PsiRecursiveElementVi
 
     @Suppress("UnstableApiUsage")
     fun replaceClasses(newText: (String) -> String) {
-        runWriteAction {
-            matchingElements.forEach { element ->
-                val psiElement = element.dereference() ?: return@forEach
-                replaceClassName(psiElement, newText)
-            }
+        matchingElements.forEach { element ->
+            val psiElement = runReadAction { element.dereference() } ?: return@forEach
+            replaceClassName(psiElement, newText)
         }
     }
 
@@ -117,8 +115,10 @@ abstract class ClassReplacementVisitor(project: Project) : PsiRecursiveElementVi
                     newText(it)
                 } else newText(it.replace(Regex(quote), ""))
             }
-        val newElement = JSPsiElementFactory.createJSExpression("$quote$classes$quote", element)
-        PsiHelper.writeAction(element.containingFile) {
+        val newElement = runReadAction {
+            JSPsiElementFactory.createJSExpression("$quote$classes$quote", element)
+        }
+        PsiHelper.writeAction(runReadAction { element.containingFile }) {
             element.replace(newElement)
         }
     }

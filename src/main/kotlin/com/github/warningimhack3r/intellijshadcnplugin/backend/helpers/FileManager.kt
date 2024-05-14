@@ -1,6 +1,7 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -21,16 +22,18 @@ class FileManager(private val project: Project) {
         path.substringAfter(deepestRelativePath).split('/').filterNot { it.isEmpty() }.also {
             log.debug("Creating subdirectories ${it.joinToString(", ")}")
         }.forEach { subdirectory ->
-            deepest = deepest.createChildDirectory(this, subdirectory)
+            deepest = runWriteAction { deepest.createChildDirectory(this, subdirectory) }
         }
-        deepest.createChildData(this, file.name).setBinaryContent(file.text.toByteArray()).also {
+        runWriteAction {
+            deepest.createChildData(this, file.name).setBinaryContent(file.text.toByteArray())
+        }.also {
             log.debug("Saved file ${file.name} under ${deepest.path}")
         }
     }
 
     fun deleteFile(file: VirtualFile): Boolean {
         return try {
-            file.delete(this).let { true }
+            runWriteAction { file.delete(this) }.let { true }
         } catch (e: IOException) {
             false
         }.also {

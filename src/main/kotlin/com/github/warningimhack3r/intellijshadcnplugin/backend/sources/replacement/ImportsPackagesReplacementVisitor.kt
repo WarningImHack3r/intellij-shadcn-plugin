@@ -4,7 +4,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.intellij.lang.ecmascript6.ES6StubElementTypes
 import com.intellij.lang.javascript.JSTokenTypes
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
-import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.PsiElement
@@ -29,11 +29,9 @@ class ImportsPackagesReplacementVisitor(project: Project) : PsiRecursiveElementV
 
     @Suppress("UnstableApiUsage")
     fun replaceImports(newText: (String) -> String) {
-        runWriteAction {
-            matchingElements.forEach { element ->
-                val psiElement = element.dereference() ?: return@forEach
-                replaceImport(psiElement, newText)
-            }
+        matchingElements.forEach { element ->
+            val psiElement = runReadAction { element.dereference() } ?: return@forEach
+            replaceImport(psiElement, newText)
         }
     }
 
@@ -48,8 +46,10 @@ class ImportsPackagesReplacementVisitor(project: Project) : PsiRecursiveElementV
                 newText(it)
             } else newText(it.replace(Regex(quote), ""))
         }
-        val newElement = JSPsiElementFactory.createJSExpression("$quote$newImport$quote", element)
-        PsiHelper.writeAction(element.containingFile) {
+        val newElement = runReadAction {
+            JSPsiElementFactory.createJSExpression("$quote$newImport$quote", element)
+        }
+        PsiHelper.writeAction(runReadAction { element.containingFile }) {
             element.replace(newElement)
         }
     }
