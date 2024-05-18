@@ -12,6 +12,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Entirely rewrite the Tailwind classes replacement engine to be more accurate and faster
+    - Consequently, the plugin now depends
+      on [Svelte](https://plugins.jetbrains.com/plugin/12375-svelte) & [Vue](https://plugins.jetbrains.com/plugin/9442-vue-js)
+      extensions and only works on WebStorm or IntelliJ IDEA Ultimate
+
 ## [0.7.7] - 2024-03-29
 
 ### Changed

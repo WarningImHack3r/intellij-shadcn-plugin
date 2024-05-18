@@ -2,17 +2,17 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Config
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Component
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
-import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.PsiFile
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -50,13 +50,9 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     protected abstract fun resolveAlias(alias: String): String
 
-    protected fun cleanAlias(alias: String): String = if (alias.startsWith("\$")) {
-        "\\$alias" // fixes Kotlin silently crashing when the replacement starts with $ with a regex
-    } else alias
-
     protected open fun adaptFileExtensionToConfig(extension: String): String = extension
 
-    protected abstract fun adaptFileToConfig(contents: String): String
+    protected abstract fun adaptFileToConfig(file: PsiFile)
 
     protected open fun fetchComponent(componentName: String): ComponentWithContents {
         return RequestSender.sendRequest("$domain/registry/styles/${getLocalConfig().style}/$componentName.json")
@@ -101,6 +97,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     }
 
     open fun addComponent(componentName: String) {
+        val config = getLocalConfig()
         // Install component
         val component = fetchComponent(componentName)
         val installedComponents = getInstalledComponents()
@@ -113,7 +110,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             log.debug("Installing ${it.size} components: ${it.joinToString(", ") { component -> component.name }}")
         }.forEach { downloadedComponent ->
             val path =
-                "${resolveAlias(getLocalConfig().aliases.components)}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
+                "${resolveAlias(config.aliases.components)}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
                     "/${downloadedComponent.name}"
                 } else ""
             // Check for deprecated components
@@ -134,7 +131,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                         listOf(
                             NotificationAction.createSimple("Remove " + if (multipleFiles) "them" else "it") {
                                 remotelyDeletedFiles.forEach { file ->
-                                    runWriteAction { fileManager.deleteFile(file) }
+                                    fileManager.deleteFile(file)
                                 }
                                 log.info(
                                     "Removed deprecated file${if (multipleFiles) "s" else ""} from ${downloadedComponent.name} (${
@@ -157,13 +154,10 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 }
             }
             downloadedComponent.files.forEach { file ->
-                val psiFile = PsiFileFactory.getInstance(project).createFileFromText(
-                    adaptFileExtensionToConfig(file.name),
-                    FileTypeManager.getInstance().getFileTypeByExtension(
-                        adaptFileExtensionToConfig(file.name).substringAfterLast('.')
-                    ),
-                    adaptFileToConfig(file.content)
+                val psiFile = PsiHelper.createPsiFile(
+                    project, adaptFileExtensionToConfig(file.name), file.content
                 )
+                adaptFileToConfig(psiFile)
                 fileManager.saveFileAtPath(psiFile, path)
             }
         }
@@ -205,14 +199,21 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     open fun isComponentUpToDate(componentName: String): Boolean {
         val remoteComponent = fetchComponent(componentName)
+        val componentPath =
+            "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${
+                if (usesDirectoriesForComponents()) {
+                    "/${remoteComponent.name}"
+                } else ""
+            }"
+        val fileManager = FileManager(project)
         return remoteComponent.files.all { file ->
-            (FileManager(project).getFileContentsAtPath(
-                "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${
-                    if (usesDirectoriesForComponents()) {
-                        "/${remoteComponent.name}"
-                    } else ""
-                }/${file.name}"
-            ) == adaptFileToConfig(file.content)).also {
+            val psiFile = PsiHelper.createPsiFile(
+                project, adaptFileExtensionToConfig(file.name), file.content
+            )
+            adaptFileToConfig(psiFile)
+            (fileManager.getFileContentsAtPath("$componentPath/${file.name}") == runReadAction {
+                psiFile.text
+            }).also {
                 log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
             }
         }

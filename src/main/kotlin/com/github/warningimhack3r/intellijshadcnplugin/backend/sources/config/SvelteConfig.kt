@@ -5,11 +5,11 @@ import kotlinx.serialization.Serializable
 @Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117")
 @Serializable
 class SvelteConfig(
-    override val `$schema`: String,
+    override val `$schema`: String = "https://shadcn-svelte.com/schema.json",
     override val style: String,
     override val tailwind: Tailwind,
-    val typescript: Boolean = true,
-    override val aliases: Aliases
+    override val aliases: Aliases,
+    val typescript: Boolean = true
 ) : Config() {
 
     @Serializable

@@ -7,10 +7,13 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSende
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiFile
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -81,12 +84,14 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
         } else extension
     }
 
-    override fun adaptFileToConfig(contents: String): String {
+    override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        return contents.replace(
-            Regex("([\"'])[^\r\n/]+/registry/[^/]+"), "$1${cleanAlias(config.aliases.components)}"
-        ).replace(
-            "\$lib/utils", config.aliases.utils
-        )
+        val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
+        runReadAction { file.accept(importsPackagesReplacementVisitor) }
+        importsPackagesReplacementVisitor.replaceImports { `package` ->
+            `package`
+                .replace(Regex("^${'$'}lib/registry/[^/]+"), config.aliases.components)
+                .replace("\$lib/utils", config.aliases.utils)
+        }
     }
 }
