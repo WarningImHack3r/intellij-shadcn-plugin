@@ -97,6 +97,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     }
 
     open fun addComponent(componentName: String) {
+        val config = getLocalConfig()
         // Install component
         val component = fetchComponent(componentName)
         val installedComponents = getInstalledComponents()
@@ -109,7 +110,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             log.debug("Installing ${it.size} components: ${it.joinToString(", ") { component -> component.name }}")
         }.forEach { downloadedComponent ->
             val path =
-                "${resolveAlias(getLocalConfig().aliases.components)}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
+                "${resolveAlias(config.aliases.components)}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
                     "/${downloadedComponent.name}"
                 } else ""
             // Check for deprecated components

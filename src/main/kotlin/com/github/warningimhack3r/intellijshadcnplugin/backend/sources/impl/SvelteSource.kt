@@ -90,7 +90,7 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
         importsPackagesReplacementVisitor.replaceImports { `package` ->
             `package`
-                .replace(Regex("^${"$"}lib/registry/[^/]+"), config.aliases.components)
+                .replace(Regex("^${'$'}lib/registry/[^/]+"), config.aliases.components)
                 .replace("\$lib/utils", config.aliases.utils)
         }
     }
