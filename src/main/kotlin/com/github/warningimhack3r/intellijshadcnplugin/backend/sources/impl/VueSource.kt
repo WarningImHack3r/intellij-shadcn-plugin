@@ -21,6 +21,7 @@ import java.nio.file.NoSuchFileException
 class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
     companion object {
         private val log = logger<VueSource>()
+        private var jsVueNotified = false
     }
 
     override var framework = "Vue"
@@ -74,11 +75,14 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
         if (!config.typescript) {
-            NotificationManager(project).sendNotification(
-                "TypeScript option for Vue",
-                "You have TypeScript disabled in your shadcn/ui config. This feature is not supported yet. Please install/update your components with the CLI for now.",
-                NotificationType.WARNING
-            )
+            if (!jsVueNotified) {
+                NotificationManager(project).sendNotification(
+                    "TypeScript option for Vue",
+                    "You have TypeScript disabled in your shadcn/ui config. This feature is not supported yet. Please install/update your components with the CLI for now.",
+                    NotificationType.WARNING
+                )
+                jsVueNotified = true
+            }
             // TODO: detype Vue file
         }
 

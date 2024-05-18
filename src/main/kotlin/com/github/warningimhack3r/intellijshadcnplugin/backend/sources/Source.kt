@@ -24,6 +24,7 @@ import java.nio.file.NoSuchFileException
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
     private val log = logger<Source<C>>()
     abstract var framework: String
+    private var config: C? = null
     protected val domain: String
         get() = URI(getLocalConfig().`$schema`).let { uri ->
             "${uri.scheme}://${uri.host}".also {
@@ -34,14 +35,21 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     // Utility methods
     protected fun getLocalConfig(): C {
         val file = "components.json"
-        return FileManager(project).getFileContentsAtPath(file)?.let {
+        return config?.also {
+            log.debug("Returning cached config")
+        } ?: FileManager(project).getFileContentsAtPath(file)?.let {
             log.debug("Parsing config from $file")
             try {
-                Json.decodeFromString(serializer, it).also { config ->
-                    log.debug("Parsed config: ${config.javaClass.name}")
+                Json.decodeFromString(serializer, it).also {
+                    log.debug("Parsed config")
                 }
             } catch (e: Exception) {
                 throw UnparseableConfigException(project, "Unable to parse $file", e)
+            }
+        }?.also {
+            if (config == null) {
+                log.debug("Caching config")
+                config = it
             }
         } ?: throw NoSuchFileException("$file not found")
     }

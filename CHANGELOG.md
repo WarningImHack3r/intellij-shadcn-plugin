@@ -18,6 +18,12 @@
     - Consequently, the plugin now depends
       on [Svelte](https://plugins.jetbrains.com/plugin/12375-svelte) & [Vue](https://plugins.jetbrains.com/plugin/9442-vue-js)
       extensions and only works on WebStorm or IntelliJ IDEA Ultimate
+- Improve crash reporter to include more relevant information
+
+### Fixed
+
+- Fix a potential crash with 2024.1+ IDEs
+- Fix JS users with Vue getting notified too often about the unavailability of the JS option
 
 ## [0.7.7] - 2024-03-29
 

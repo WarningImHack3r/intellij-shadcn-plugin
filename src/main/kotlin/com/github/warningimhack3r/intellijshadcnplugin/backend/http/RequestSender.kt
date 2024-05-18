@@ -33,14 +33,24 @@ object RequestSender {
         log.debug(
             "Request method: ${request.method()}, headers: ${
                 request.headers().map()
-            }, body: ${body?.take(100)}${if ((body?.length ?: 0) > 100) "..." else ""}"
+            }, body:${
+                if (body != null) {
+                    "\n"
+                } else ""
+            }${body?.take(100)}${if ((body?.length ?: 0) > 100) "..." else ""}"
         )
         HttpClient.newBuilder()
             .followRedirects(HttpClient.Redirect.NORMAL)
             .build()
             .send(request, HttpResponse.BodyHandlers.ofString()).let { response ->
                 return Response(response.statusCode(), response.headers().map(), response.body()).also {
-                    log.debug("Request to $url returned ${it.statusCode} (${it.body.length} bytes): ${it.body.take(100)}${if (it.body.length > 100) "..." else ""}")
+                    log.debug(
+                        "Request to $url returned ${it.statusCode} (${it.body.length} bytes):${
+                            if (it.body.isNotEmpty()) {
+                                "\n"
+                            } else ""
+                        }${it.body.take(100)}${if (it.body.length > 100) "..." else ""}"
+                    )
                 }
             }
     }
