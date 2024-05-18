@@ -103,11 +103,12 @@ abstract class ClassReplacementVisitor(project: Project) : PsiRecursiveElementVi
     }
 
     private fun replaceClassName(element: PsiElement, newText: (String) -> String) {
-        val quote = when (element.text.first()) {
-            '\'', '`', '"' -> element.text.first().toString()
+        val text = runReadAction { element.text }
+        val quote = when (text.first()) {
+            '\'', '`', '"' -> text.first().toString()
             else -> ""
         }
-        val classes = element.text
+        val classes = text
             .split(" ")
             .filter { it.isNotEmpty() }
             .joinToString(" ") {

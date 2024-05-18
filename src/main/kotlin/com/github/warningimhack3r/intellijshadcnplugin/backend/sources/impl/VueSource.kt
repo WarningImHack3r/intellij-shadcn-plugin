@@ -100,36 +100,37 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
             `package`
         }
 
-        if (!config.tailwind.cssVariables) {
-            val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
+        val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
 
-            val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
-                ?: throw Exception("Inline colors not found")
-            val lightColors = inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
-                lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
-            } ?: emptyMap()
-            val darkColors = inlineColors.jsonObject["dark"]?.jsonObject?.let { darkColors ->
-                darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
-            } ?: emptyMap()
+        val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
+            ?: throw Exception("Inline colors not found")
+        val lightColors = inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
+            lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
+        } ?: emptyMap()
+        val darkColors = inlineColors.jsonObject["dark"]?.jsonObject?.let { darkColors ->
+            darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
+        } ?: emptyMap()
 
-            val classReplacementVisitor = VueClassReplacementVisitor(project)
-            runReadAction { file.accept(classReplacementVisitor) }
-            classReplacementVisitor.replaceClasses replacer@{ `class` ->
-                val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
-                val className = `class`.substringAfterLast(":")
-                val twPrefix = config.tailwind.prefix
-                if (className == "border") {
-                    return@replacer "${modifier}${twPrefix}border ${modifier}${twPrefix}border-border"
-                }
-                val prefix = prefixesToReplace.find { className.startsWith(it) }
-                    ?: return@replacer "$modifier$twPrefix$className"
-                val color = className.substringAfter(prefix)
-                val lightColor = lightColors[color]
-                val darkColor = darkColors[color]
-                if (lightColor != null && darkColor != null) {
-                    "$modifier$twPrefix$prefix$lightColor dark:$modifier$twPrefix$prefix$darkColor"
-                } else "$modifier$twPrefix$className"
+        val classReplacementVisitor = VueClassReplacementVisitor(project)
+        runReadAction { file.accept(classReplacementVisitor) }
+        classReplacementVisitor.replaceClasses replacer@{ `class` ->
+            val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
+            val className = `class`.substringAfterLast(":")
+            val twPrefix = config.tailwind.prefix
+            if (config.tailwind.cssVariables) {
+                return@replacer "$modifier$twPrefix$className"
             }
+            if (className == "border") {
+                return@replacer "$modifier${twPrefix}border $modifier${twPrefix}border-border"
+            }
+            val prefix = prefixesToReplace.find { className.startsWith(it) }
+                ?: return@replacer "$modifier$twPrefix$className"
+            val color = className.substringAfter(prefix)
+            val lightColor = lightColors[color]
+            val darkColor = darkColors[color]
+            if (lightColor != null && darkColor != null) {
+                "$modifier$twPrefix$prefix$lightColor dark:$modifier$twPrefix$prefix$darkColor"
+            } else "$modifier$twPrefix$className"
         }
     }
 

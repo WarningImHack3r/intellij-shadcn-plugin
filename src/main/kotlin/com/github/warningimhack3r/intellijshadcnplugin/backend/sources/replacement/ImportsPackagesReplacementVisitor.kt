@@ -36,11 +36,12 @@ class ImportsPackagesReplacementVisitor(project: Project) : PsiRecursiveElementV
     }
 
     private fun replaceImport(element: PsiElement, newText: (String) -> String) {
-        val quote = when (element.text.first()) {
-            '\'', '`', '"' -> element.text.first().toString()
+        val text = runReadAction { element.text }
+        val quote = when (text.first()) {
+            '\'', '`', '"' -> text.first().toString()
             else -> ""
         }
-        val newImport = element.text.let {
+        val newImport = text.let {
             if (quote.isEmpty()) {
                 // Cannot happen, but just in case
                 newText(it)

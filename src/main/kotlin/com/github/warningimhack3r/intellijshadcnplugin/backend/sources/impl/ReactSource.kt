@@ -98,8 +98,11 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
             val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
             val className = `class`.substringAfterLast(":")
             val twPrefix = config.tailwind.prefix
+            if (config.tailwind.cssVariables) {
+                return@replacer "$modifier$twPrefix$className"
+            }
             if (className == "border") {
-                return@replacer "${modifier}${twPrefix}border ${modifier}${twPrefix}border-border"
+                return@replacer "$modifier${twPrefix}border $modifier${twPrefix}border-border"
             }
             val prefix = prefixesToReplace.find { className.startsWith(it) }
                 ?: return@replacer "$modifier$twPrefix$className"

@@ -35,7 +35,7 @@ class ReactConfig(
         override val config: String,
         override val css: String,
         override val baseColor: String,
-        private val cssVariables: Boolean = true,
+        val cssVariables: Boolean = true,
         val prefix: String = ""
     ) : Config.Tailwind()
 
