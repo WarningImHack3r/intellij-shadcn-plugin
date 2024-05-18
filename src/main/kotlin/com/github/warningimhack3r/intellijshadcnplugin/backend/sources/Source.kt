@@ -23,8 +23,8 @@ import java.nio.file.NoSuchFileException
 
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
     private val log = logger<Source<C>>()
-    abstract var framework: String
     private var config: C? = null
+
     protected val domain: String
         get() = URI(getLocalConfig().`$schema`).let { uri ->
             "${uri.scheme}://${uri.host}".also {
@@ -32,26 +32,29 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             }
         }
 
+    open val configFile = "components.json"
+
+    abstract var framework: String
+
     // Utility methods
     protected fun getLocalConfig(): C {
-        val file = "components.json"
         return config?.also {
             log.debug("Returning cached config")
-        } ?: FileManager(project).getFileContentsAtPath(file)?.let {
-            log.debug("Parsing config from $file")
+        } ?: FileManager(project).getFileContentsAtPath(configFile)?.let {
+            log.debug("Parsing config from $configFile")
             try {
                 Json.decodeFromString(serializer, it).also {
                     log.debug("Parsed config")
                 }
             } catch (e: Exception) {
-                throw UnparseableConfigException(project, "Unable to parse $file", e)
+                throw UnparseableConfigException(project, configFile, e)
             }
         }?.also {
             if (config == null) {
                 log.debug("Caching config")
                 config = it
             }
-        } ?: throw NoSuchFileException("$file not found")
+        } ?: throw NoSuchFileException("$configFile not found")
     }
 
     protected abstract fun usesDirectoriesForComponents(): Boolean

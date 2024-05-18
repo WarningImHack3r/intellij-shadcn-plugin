@@ -57,12 +57,12 @@ class FileManager(private val project: Project) {
             // because it works fine during local development.
             runReadAction {
                 FilenameIndex.getVirtualFilesByName(
-                    "components.json",
+                    "package.json",
                     GlobalSearchScope.projectScope(project)
                 )
             }.firstOrNull().also {
                 if (it == null) {
-                    log.warn("components.json not found with the workaround")
+                    log.warn("package.json not found with the workaround")
                 }
             }?.parent?.children?.filter {
                 it.name.contains(name)

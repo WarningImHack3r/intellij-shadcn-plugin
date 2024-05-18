@@ -16,7 +16,8 @@ object SourceScanner {
     val log = logger<SourceScanner>()
 
     fun findShadcnImplementation(project: Project): Source<*>? {
-        return FileManager(project).getFileContentsAtPath("components.json")?.let { componentsJson ->
+        val fileManager = FileManager(project)
+        return fileManager.getFileContentsAtPath("components.json")?.let { componentsJson ->
             val contents = Json.parseToJsonElement(componentsJson).jsonObject
             val schema = contents["\$schema"]?.jsonPrimitive?.content ?: ""
             when {
@@ -26,6 +27,8 @@ object SourceScanner {
                 schema.contains("shadcn-solid") || schema.contains("solid-ui.com") -> SolidSource(project)
                 else -> null
             }
+        } ?: fileManager.getFileContentsAtPath("ui.config.json")?.let {
+            SolidSource(project, "ui.config.json")
         }.also {
             if (it == null) log.warn("No shadcn implementation found")
             else log.info("Found shadcn implementation: ${it.javaClass.name}")
