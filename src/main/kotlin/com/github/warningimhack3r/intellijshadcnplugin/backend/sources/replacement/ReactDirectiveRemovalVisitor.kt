@@ -29,12 +29,19 @@ class ReactDirectiveRemovalVisitor(
         super.visitElement(element)
 
         if (!done) {
+            // TODO: ExpressionStatement.directive?
             val isDirectiveCandidate = PlatformPatterns.psiElement(JSElementTypes.EXPRESSION_STATEMENT)
                 .withChild(PlatformPatterns.psiElement(JSStubElementTypes.LITERAL_EXPRESSION))
                 .accepts(element)
             val isJunk = elementsToRemove.accepts(element)
 
-            if (!directiveFound && isDirectiveCandidate && directiveValue(element.text.replace(Regex("['\";]"), ""))) {
+            if (!directiveFound && isDirectiveCandidate && directiveValue(
+                    element.text.replace(
+                        Regex("['\";]"),
+                        ""
+                    )
+                )
+            ) {
                 matchingElements.add(smartPointerManager.createSmartPsiElementPointer(element))
                 directiveFound = true
             } else if (directiveFound) {
