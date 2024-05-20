@@ -8,6 +8,7 @@
 
 - Add support for Vue `typescript` option (transpiling TypeScript to JavaScript as well as in `*.vue` files)
   - See https://github.com/radix-vue/shadcn-vue/issues/378
+- Add support for React/Solid (UI) `tsx` option (transpiling TypeScript to JavaScript)
 
 ## Description
 

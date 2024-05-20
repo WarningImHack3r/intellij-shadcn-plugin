@@ -1,33 +1,40 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
+import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.ReactConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ReactDirectiveRemovalVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import java.nio.file.NoSuchFileException
 
 class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.serializer()) {
     companion object {
         private val log = logger<ReactSource>()
+        private var isJsUnsupportedNotified = false
     }
 
     override var framework = "React"
 
+    override fun getURLPathForComponent(componentName: String) =
+        "registry/styles/${getLocalConfig().style}/$componentName.json"
+
+    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
+
     override fun usesDirectoriesForComponents() = false
 
     override fun resolveAlias(alias: String): String {
-        if (!alias.startsWith("$") && !alias.startsWith("@")) return alias.also {
-            log.debug("Alias $alias does not start with $ or @, returning it as-is")
+        if (!alias.startsWith("$") && !alias.startsWith("@") && !alias.startsWith("~")) {
+            log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
+            return alias
         }
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
         val tsConfig = FileManager(project).getFileContentsAtPath(configFile)
@@ -54,6 +61,18 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
 
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
+
+        if (!config.tsx) {
+            if (!isJsUnsupportedNotified) {
+                NotificationManager(project).sendNotification(
+                    "TypeScript option for React",
+                    "You have TypeScript disabled in your shadcn/ui config. This feature is not supported yet. Please install/update your components with the CLI for now.",
+                    NotificationType.WARNING
+                )
+                isJsUnsupportedNotified = true
+            }
+            // TODO: detype React file
+        }
 
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
@@ -113,5 +132,12 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
                 "$modifier$twPrefix$prefix$lightColor dark:$modifier$twPrefix$prefix$darkColor"
             } else "$modifier$twPrefix$className"
         }
+    }
+
+    override fun fetchColors(): JsonElement {
+        val baseColor = getLocalConfig().tailwind.baseColor
+        return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
+            Json.parseToJsonElement(it.body)
+        } ?: throw Exception("Colors not found")
     }
 }

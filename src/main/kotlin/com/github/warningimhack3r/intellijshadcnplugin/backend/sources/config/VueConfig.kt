@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 class VueConfig(
     override val `$schema`: String = "https://shadcn-vue.com/schema.json",
-    override val style: String,
+    val style: String,
     val typescript: Boolean = true,
     val tsConfigPath: String = "./tsconfig.json",
     override val tailwind: Tailwind,
@@ -30,12 +30,13 @@ class VueConfig(
      * @param css The relative path of the Tailwind CSS file.
      * @param baseColor The library's base color.
      * @param cssVariables Whether to use CSS variables instead of Tailwind utility classes.
+     * @param prefix The prefix to use for utility classes.
      */
     @Serializable
     open class Tailwind(
         override val config: String,
         override val css: String,
-        override val baseColor: String,
+        val baseColor: String,
         val cssVariables: Boolean = true,
         val prefix: String = ""
     ) : Config.Tailwind()
@@ -59,10 +60,16 @@ class VueConfig(
         ASTRO
     }
 
+    /**
+     * The aliases for the components and utils directories.
+     * @param components The alias for the components' directory.
+     * @param utils The alias for the utils directory.
+     * @param ui The alias for UI components.
+     */
     @Serializable
     class Aliases(
-        override val components: String,
-        override val utils: String,
+        val components: String,
+        val utils: String,
         val ui: String? = null
     ) : Config.Aliases()
 }

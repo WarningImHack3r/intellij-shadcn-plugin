@@ -1,6 +1,7 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
+import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.VueConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
@@ -12,25 +13,28 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import java.nio.file.NoSuchFileException
 
 class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
     companion object {
         private val log = logger<VueSource>()
-        private var jsVueNotified = false
+        private var isJsUnsupportedNotified = false
     }
 
     override var framework = "Vue"
 
+    override fun getURLPathForComponent(componentName: String) =
+        "registry/styles/${getLocalConfig().style}/$componentName.json"
+
+    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
+
     override fun usesDirectoriesForComponents() = true
 
     override fun resolveAlias(alias: String): String {
-        if (!alias.startsWith("$") && !alias.startsWith("@")) return alias.also {
-            log.debug("Alias $alias does not start with $ or @, returning it as-is")
+        if (!alias.startsWith("$") && !alias.startsWith("@") && !alias.startsWith("~")) {
+            log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
+            return alias
         }
 
         fun resolvePath(configFile: String): String? {
@@ -75,13 +79,13 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
         if (!config.typescript) {
-            if (!jsVueNotified) {
+            if (!isJsUnsupportedNotified) {
                 NotificationManager(project).sendNotification(
                     "TypeScript option for Vue",
                     "You have TypeScript disabled in your shadcn/ui config. This feature is not supported yet. Please install/update your components with the CLI for now.",
                     NotificationType.WARNING
                 )
-                jsVueNotified = true
+                isJsUnsupportedNotified = true
             }
             // TODO: detype Vue file
         }
@@ -136,6 +140,13 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
                 "$modifier$twPrefix$prefix$lightColor dark:$modifier$twPrefix$prefix$darkColor"
             } else "$modifier$twPrefix$className"
         }
+    }
+
+    override fun fetchColors(): JsonElement {
+        val baseColor = getLocalConfig().tailwind.baseColor
+        return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
+            Json.parseToJsonElement(it.body)
+        } ?: throw Exception("Colors not found")
     }
 
     override fun getRegistryDependencies(component: ComponentWithContents): List<ComponentWithContents> {

@@ -14,14 +14,9 @@ sealed class Config {
     abstract val `$schema`: String
 
     /**
-     * The library's style used.
-     */
-    abstract val style: String
-
-    /**
      * The Tailwind configuration.
      */
-    abstract val tailwind: Tailwind
+    abstract val tailwind: Tailwind?
 
     /**
      * The aliases for the components and utils directories.
@@ -42,26 +37,11 @@ sealed class Config {
          * The relative path of the Tailwind CSS file.
          */
         abstract val css: String
-
-        /**
-         * The library's base color.
-         */
-        abstract val baseColor: String
     }
 
     /**
      * The aliases for the components and utils directories.
      */
     @Serializable
-    sealed class Aliases {
-        /**
-         * The alias for the components' directory.
-         */
-        abstract val components: String
-
-        /**
-         * The alias for the utils directory.
-         */
-        abstract val utils: String
-    }
+    sealed class Aliases
 }

@@ -15,10 +15,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import java.nio.file.NoSuchFileException
 
 class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfig.serializer()) {
@@ -28,11 +25,17 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
 
     override var framework = "Svelte"
 
+    override fun getURLPathForComponent(componentName: String) =
+        "registry/styles/${getLocalConfig().style}/$componentName.json"
+
+    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
+
     override fun usesDirectoriesForComponents() = true
 
     override fun resolveAlias(alias: String): String {
-        if (!alias.startsWith("$") && !alias.startsWith("@")) return alias.also {
-            log.debug("Alias $alias does not start with $ or @, returning it as-is")
+        if (!alias.startsWith("$") && !alias.startsWith("@") && !alias.startsWith("~")) {
+            log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
+            return alias
         }
         val usesKit = DependencyManager(project).isDependencyInstalled("@sveltejs/kit")
         val tsConfigName = if (getLocalConfig().typescript) "tsconfig.json" else "jsconfig.json"
@@ -93,5 +96,12 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
                 .replace(Regex("^${'$'}lib/registry/[^/]+"), config.aliases.components)
                 .replace("\$lib/utils", config.aliases.utils)
         }
+    }
+
+    override fun fetchColors(): JsonElement {
+        val baseColor = getLocalConfig().tailwind.baseColor
+        return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
+            Json.parseToJsonElement(it.body)
+        } ?: throw Exception("Colors not found")
     }
 }
