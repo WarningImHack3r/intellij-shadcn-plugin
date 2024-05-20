@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix a regression with imports replacement
+
 ## [0.8.0] - 2024-05-20
 
 ### Changed

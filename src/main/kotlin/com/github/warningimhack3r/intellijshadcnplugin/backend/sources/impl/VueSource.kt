@@ -95,11 +95,11 @@ class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.seriali
         importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
             if (`package`.startsWith("@/lib/registry/")) {
                 return@replacer if (config.aliases.ui != null) {
-                    `package`.replace(Regex("^@/lib/registry/[^/]+/ui"), config.aliases.ui)
+                    `package`.replace(Regex("^@/lib/registry/[^/]+/ui"), escapeRegexValue(config.aliases.ui))
                 } else {
                     `package`.replace(
                         Regex("^@/lib/registry/[^/]+"),
-                        config.aliases.components,
+                        escapeRegexValue(config.aliases.components)
                     )
                 }
             } else if (`package` == "@/lib/utils") {

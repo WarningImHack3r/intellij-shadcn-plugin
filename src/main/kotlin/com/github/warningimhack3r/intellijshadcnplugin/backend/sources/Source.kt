@@ -66,6 +66,18 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     protected abstract fun resolveAlias(alias: String): String
 
+    /**
+     * Escapes the value if it starts with a $. MUST be used when [String.replace]
+     * is used with a [Regex] as a first argument and when the second may start with a $.
+     * Otherwise, Kotlin will silently fail.
+     *
+     * @param value The value to escape
+     * @return The value, escaped if necessary
+     */
+    protected fun escapeRegexValue(value: String) = if (value.startsWith("\$")) {
+        "\\$value" // fixes Kotlin silently failing when the replacement starts with $ with a regex
+    } else value
+
     protected open fun adaptFileExtensionToConfig(extension: String): String = extension
 
     protected abstract fun adaptFileToConfig(file: PsiFile)

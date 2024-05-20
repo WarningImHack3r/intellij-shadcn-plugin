@@ -79,11 +79,11 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
         importsPackagesReplacementVisitor.replaceImports visitor@{ `package` ->
             if (`package`.startsWith("@/registry/")) {
                 return@visitor if (config.aliases.ui != null) {
-                    `package`.replace(Regex("^@/registry/[^/]+/ui"), config.aliases.ui)
+                    `package`.replace(Regex("^@/registry/[^/]+/ui"), escapeRegexValue(config.aliases.ui))
                 } else {
                     `package`.replace(
                         Regex("^@/registry/[^/]+"),
-                        config.aliases.components,
+                        escapeRegexValue(config.aliases.components)
                     )
                 }
             } else if (`package` == "@/lib/utils") {
