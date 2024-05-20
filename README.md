@@ -8,6 +8,7 @@
 
 - Add support for Vue `typescript` option (transpiling TypeScript to JavaScript as well as in `*.vue` files)
   - See https://github.com/radix-vue/shadcn-vue/issues/378
+- Add support for React/Solid (UI) `tsx` option (transpiling TypeScript to JavaScript)
 
 ## Description
 
@@ -16,7 +17,7 @@ Manage your shadcn/ui components in your project. Supports Svelte, React, Vue, a
 
 This plugin will help you manage your shadcn/ui components through a simple tool window. Add, remove, update them with a
 single click.  
-**This plugin will only work with an existing `components.json` file. Manually copied components will not be detected
+**This plugin will only work with an existing `components.json` (or `ui.config.json` for Solid UI) file. Manually copied components will not be detected
 otherwise.**
 
 ## Features

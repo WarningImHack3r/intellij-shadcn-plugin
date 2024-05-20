@@ -18,6 +18,7 @@
     - Consequently, the plugin now depends
       on [Svelte](https://plugins.jetbrains.com/plugin/12375-svelte) & [Vue](https://plugins.jetbrains.com/plugin/9442-vue-js)
       extensions and only works on WebStorm or IntelliJ IDEA Ultimate
+- Overhaul support for Solid as both implementations diverged from shadcn/ui
 - Improve crash reporter to include more relevant information
 
 ### Fixed
