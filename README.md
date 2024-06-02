@@ -4,19 +4,21 @@
 [![Version](https://img.shields.io/jetbrains/plugin/v/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/com.github.warningimhack3r.intellijshadcnplugin)
 [![Downloads](https://img.shields.io/jetbrains/plugin/d/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/com.github.warningimhack3r.intellijshadcnplugin)
 
-## ToDo list before 1.0.0
+## 1.0.0 roadmap
 
-- Rework `class`es replacement detection mechanism to be 100% accurate
-  - Add tests for this
 - Add support for Vue `typescript` option (transpiling TypeScript to JavaScript as well as in `*.vue` files)
+  - See https://github.com/radix-vue/shadcn-vue/issues/378
+- Add support for React/Solid (UI) `tsx` option (transpiling TypeScript to JavaScript)
 
 ## Description
 
 <!-- Plugin description -->
 Manage your shadcn/ui components in your project. Supports Svelte, React, Vue, and Solid.
 
-This plugin will help you manage your shadcn/ui components through a simple tool window. Add, remove, update them with a single click.  
-**This plugin will only work with an existing `components.json` file. Manually copied components will not be detected otherwise.**
+This plugin will help you manage your shadcn/ui components through a simple tool window. Add, remove, update them with a
+single click.  
+**This plugin will only work with an existing `components.json` (or `ui.config.json` for Solid UI) file. Manually copied components will not be detected
+otherwise.**
 
 ## Features
 
@@ -33,7 +35,8 @@ This plugin will help you manage your shadcn/ui components through a simple tool
 
 Simply open the `shadcn/ui` tool window and start managing your components.  
 If you don't see the tool window, you can open it from `View > Tool Windows > shadcn/ui`.  
-**When adding or removing components, the tool window won't refresh automatically yet. You can refresh it by closing and reopening it.**
+**When adding or removing components, the tool window won't refresh automatically yet. You can refresh it by closing and
+reopening it.**
 
 ## Planned Features
 
@@ -44,20 +47,22 @@ If you don't see the tool window, you can open it from `View > Tool Windows > sh
 - Figure out a clean way to refresh the tool window automatically after adding or removing components
 - Refresh/recreate the tool window automatically when the project finishes indexing
 - Add support for monorepos
+
 <!-- Plugin description end -->
 
 ## Installation
 
 - Using the IDE built-in plugin system:
-  
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "intellij-shadcn-plugin"</kbd> >
+
+  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "
+  intellij-shadcn-plugin"</kbd> >
   <kbd>Install</kbd>
-  
+
 - Manually:
 
-  Download the [latest release](https://github.com/WarningImHack3r/intellij-shadcn-plugin/releases/latest) and install it manually using
+  Download the [latest release](https://github.com/WarningImHack3r/intellij-shadcn-plugin/releases/latest) and install
+  it manually using
   <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
-
 
 ---
 Plugin based on the [IntelliJ Platform Plugin Template][template].

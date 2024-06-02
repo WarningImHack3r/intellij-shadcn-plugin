@@ -6,13 +6,13 @@ import com.intellij.openapi.project.Project
 
 class UnparseableConfigException(
     project: Project,
-    message: String? = null,
+    configName: String,
     cause: Throwable? = null
-) : Exception(message, cause) {
+) : Exception("Unable to parse $configName", cause) {
     init {
         NotificationManager(project).sendNotification(
             "Unparseable configuration file",
-            "Your <code>components.json</code> file could not be parsed.<br />Please check that it is a valid JSON and that it contains the correct fields.",
+            "Your <code>${configName}</code> file could not be parsed.<br />Please check that it is a valid JSON and that it contains the correct fields.",
             NotificationType.ERROR
         )
     }

@@ -1,5 +1,6 @@
-.gradle
-.idea
+.gradle/
+.idea/*
+!.idea/icon.svg
 .qodana
-build
+build/
 .DS_Store

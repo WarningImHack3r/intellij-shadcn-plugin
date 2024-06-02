@@ -1,11 +1,18 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
+import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.ReactConfig
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ReactDirectiveRemovalVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
-import com.intellij.util.applyIf
+import com.intellij.psi.PsiFile
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -14,17 +21,26 @@ import java.nio.file.NoSuchFileException
 class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.serializer()) {
     companion object {
         private val log = logger<ReactSource>()
+        private var isJsUnsupportedNotified = false
     }
+
     override var framework = "React"
+
+    override fun getURLPathForComponent(componentName: String) =
+        "registry/styles/${getLocalConfig().style}/$componentName.json"
+
+    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
 
     override fun usesDirectoriesForComponents() = false
 
     override fun resolveAlias(alias: String): String {
-        if (!alias.startsWith("$") && !alias.startsWith("@")) return alias.also {
-            log.debug("Alias $alias does not start with $ or @, returning it as-is")
+        if (!alias.startsWith("$") && !alias.startsWith("@") && !alias.startsWith("~")) {
+            log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
+            return alias
         }
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
-        val tsConfig = FileManager(project).getFileContentsAtPath(configFile) ?: throw NoSuchFileException("$configFile not found")
+        val tsConfig = FileManager(project).getFileContentsAtPath(configFile)
+            ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = tsConfigJson.parseToJsonElement(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
@@ -45,130 +61,85 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
         } else extension
     }
 
-    override fun adaptFileToConfig(contents: String): String {
+    override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        // Note: this does not prevent additional imports other than "cn" from being replaced,
-        // but I'm once again following what the original code does for parity
-        // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L25-L35).
-        val newContents = Regex(".*\\{.*[ ,\n\t]+cn[ ,].*}.*\"(@/lib/cn).*").replace(
-            // Note: this condition does not replace UI paths (= $components/$ui) by the components path
-            // if the UI alias is not set.
-            // For me, this is a bug, but I'm following what the original code does for parity
-            // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-import.ts#L10-L23).
-            if (config.aliases.ui != null) {
-                contents.replace(
-                    Regex("@/registry/[^/]+/ui"), cleanAlias(config.aliases.ui)
+
+        if (!config.tsx) {
+            if (!isJsUnsupportedNotified) {
+                NotificationManager(project).sendNotification(
+                    "TypeScript option for React",
+                    "You have TypeScript disabled in your shadcn/ui config. This feature is not supported yet. Please install/update your components with the CLI for now.",
+                    NotificationType.WARNING
                 )
-            } else contents.replace(
-                Regex("@/registry/[^/]+"), cleanAlias(config.aliases.components)
-            )
-        ) { result ->
-            result.groupValues[0].replace(result.groupValues[1], config.aliases.utils)
-        }.applyIf(config.rsc) {
-            replace(
-                Regex("\"use client\";*\n"), ""
-            )
+                isJsUnsupportedNotified = true
+            }
+            // TODO: detype React file
         }
 
-        /**
-         * Prepends `tw-` to all Tailwind classes.
-         * @param classes The classes to prefix, an unquoted string of space-separated class names.
-         * @param prefix The prefix to add to each class name.
-         * @return The prefixed classes.
-         */
-        fun prefixClasses(classes: String, prefix: String): String = classes
-            .split(" ")
-            .filterNot { it.isEmpty() }
-            .joinToString(" ") {
-                val className = it.trim().split(":")
-                if (className.size == 1) {
-                    "$prefix${className[0]}"
+        val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
+        runReadAction { file.accept(importsPackagesReplacementVisitor) }
+        importsPackagesReplacementVisitor.replaceImports visitor@{ `package` ->
+            if (`package`.startsWith("@/registry/")) {
+                return@visitor if (config.aliases.ui != null) {
+                    `package`.replace(Regex("^@/registry/[^/]+/ui"), escapeRegexValue(config.aliases.ui))
                 } else {
-                    "${className.dropLast(1).joinToString(":")}:$prefix${className.last()}"
-                }
-            }
-
-        /**
-         * Converts CSS variables to Tailwind utility classes.
-         * @param classes The classes to convert, an unquoted string of space-separated class names.
-         * @param lightColors The light colors map to use.
-         * @param darkColors The dark colors map to use.
-         * @return The converted classes.
-         */
-        fun variablesToUtilities(classes: String, lightColors: Map<String, String>, darkColors: Map<String, String>): String {
-            // Note: this does not include `border` classes at the beginning or end of the string,
-            // but I'm once again following what the original code does for parity
-            // (https://github.com/shadcn-ui/ui/blob/fb614ac2921a84b916c56e9091aa0ae8e129c565/packages/cli/src/utils/transformers/transform-css-vars.ts#L142-L145).
-            val newClasses = classes.replace(" border ", " border border-border ")
-
-            val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
-
-            /**
-             * Replaces a class with CSS variables with Tailwind utility classes.
-             * @param class The class to replace.
-             * @return The replaced class.
-             */
-            fun replaceClass(`class`: String): String {
-                val prefix = prefixesToReplace.find { `class`.startsWith(it) } ?: return `class`
-                val color = `class`.substringAfter(prefix)
-                val lightColor = lightColors[color]
-                val darkColor = darkColors[color]
-                return if (lightColor != null && darkColor != null) {
-                    "$prefix$lightColor dark:$prefix$darkColor"
-                } else `class`
-            }
-
-            return newClasses
-                .split(" ")
-                .filterNot { it.isEmpty() }
-                .joinToString(" ") {
-                    val className = it.trim().split(":")
-                    if (className.size == 1) {
-                        replaceClass(className[0])
-                    } else {
-                        "${className.dropLast(1).joinToString(":")}:${replaceClass(className.last())}"
-                    }
-                }
-        }
-
-        fun handleClasses(classes: String): String {
-            var newClasses = classes
-            if (!config.tailwind.cssVariables) {
-                val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject ?: throw Exception("Inline colors not found")
-                newClasses = variablesToUtilities(
-                    newClasses,
-                    inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
-                        lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
-                    } ?: emptyMap(),
-                    inlineColors.jsonObject["dark"]?.jsonObject?.let { darkColors ->
-                        darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
-                    } ?: emptyMap()
-                )
-            }
-            if (config.tailwind.prefix.isNotEmpty()) {
-                newClasses = prefixClasses(newClasses, config.tailwind.prefix)
-            }
-            return newClasses
-        }
-
-        return Regex("className=(?:(?!>)[^\"'])*[\"']([^>]*)[\"']").replace(newContents) { result ->
-            // matches any className, and takes everything inside the first quote to the last quote found before the closing `>`
-            // if no quotes are found before the closing `>`, skips the match
-            val match = result.groupValues[0]
-            val group = result.groupValues[1]
-            match.replace(
-                group,
-                // if the group contains a quote, we assume the classes are the last quoted string in the group
-                if (group.contains("\"")) {
-                    group.substringBeforeLast('"') + "\"" + handleClasses(
-                        group.substringAfterLast('"')
+                    `package`.replace(
+                        Regex("^@/registry/[^/]+"),
+                        escapeRegexValue(config.aliases.components)
                     )
-                } else if (group.contains("'")) {
-                    group.substringBeforeLast("'") + "'" + handleClasses(
-                        group.substringAfterLast("'")
-                    )
-                } else handleClasses(group)
-            )
+                }
+            } else if (`package` == "@/lib/utils") {
+                return@visitor config.aliases.utils
+            }
+            `package`
         }
+
+        if (!config.rsc) {
+            val directiveVisitor = ReactDirectiveRemovalVisitor(project) { directive ->
+                directive == "use client"
+            }
+            runReadAction { file.accept(directiveVisitor) }
+            directiveVisitor.removeMatchingElements()
+        }
+
+        val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
+
+        val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
+            ?: throw Exception("Inline colors not found")
+        val lightColors = inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
+            lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
+        } ?: emptyMap()
+        val darkColors = inlineColors.jsonObject["dark"]?.jsonObject?.let { darkColors ->
+            darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
+        } ?: emptyMap()
+
+        val replacementVisitor = JSXClassReplacementVisitor(project)
+        runReadAction { file.accept(replacementVisitor) }
+        replacementVisitor.replaceClasses replacer@{ `class` ->
+            val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
+            val className = `class`.substringAfterLast(":")
+            val twPrefix = config.tailwind.prefix
+            if (config.tailwind.cssVariables) {
+                return@replacer "$modifier$twPrefix$className"
+            }
+            if (className == "border") {
+                return@replacer "$modifier${twPrefix}border $modifier${twPrefix}border-border"
+            }
+            val prefix = prefixesToReplace.find { className.startsWith(it) }
+                ?: return@replacer "$modifier$twPrefix$className"
+            val color = className.substringAfter(prefix)
+            val lightColor = lightColors[color]
+            val darkColor = darkColors[color]
+            if (lightColor != null && darkColor != null) {
+                "$modifier$twPrefix$prefix$lightColor dark:$modifier$twPrefix$prefix$darkColor"
+            } else "$modifier$twPrefix$className"
+        }
+    }
+
+    override fun fetchColors(): JsonElement {
+        val baseColor = getLocalConfig().tailwind.baseColor
+        return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
+            Json.parseToJsonElement(it.body)
+        } ?: throw Exception("Colors not found")
     }
 }

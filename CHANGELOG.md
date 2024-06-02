@@ -12,6 +12,26 @@
 
 ## [Unreleased]
 
+## [0.8.1] - 2024-05-20
+
+### Fixed
+
+- Fix a regression with imports replacement
+
+## [0.8.0] - 2024-05-20
+
+### Changed
+
+- Entirely rewrite the Tailwind classes replacement engine to be more accurate and faster
+    - Consequently, the plugin now depends on [Svelte](https://plugins.jetbrains.com/plugin/12375-svelte) & [Vue](https://plugins.jetbrains.com/plugin/9442-vue-js) extensions and only works on WebStorm or IntelliJ IDEA Ultimate
+- Overhaul support for Solid as both implementations diverged from shadcn/ui
+- Improve crash reporter to include more relevant information
+
+### Fixed
+
+- Fix a potential crash with 2024.1+ IDEs
+- Fix JS users with Vue getting notified too often about the unavailability of the JS option
+
 ## [0.7.7] - 2024-03-29
 
 ### Changed
@@ -79,7 +99,9 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.7...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.0...v0.8.1
+[0.8.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.7...v0.8.0
 [0.7.7]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.6...v0.7.7
 [0.7.6]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.5...v0.7.6
 [0.7.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.4...v0.7.5

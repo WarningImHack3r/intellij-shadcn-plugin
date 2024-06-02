@@ -5,20 +5,20 @@ import kotlinx.serialization.Serializable
 /**
  * A shadcn-svelte locally installed components.json file.
  * @param `$schema` The schema URL for the file.
- * @param style The library style used.
- * @param tailwind The Tailwind configuration.
+ * @param style The library's style used.
  * @param rsc Whether to support React Server Components.
  * @param tsx Whether to use TypeScript over JavaScript.
+ * @param tailwind The Tailwind configuration.
  * @param aliases The aliases for the components and utils directories.
  */
 @Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117")
 @Serializable
 class ReactConfig(
-    override val `$schema`: String,
-    override val style: String,
-    override val tailwind: Tailwind,
-    val rsc: Boolean,
+    override val `$schema`: String = "https://ui.shadcn.com/schema.json",
+    val style: String,
+    val rsc: Boolean = false,
     val tsx: Boolean = true,
+    override val tailwind: Tailwind,
     override val aliases: Aliases
 ) : Config() {
 
@@ -34,8 +34,8 @@ class ReactConfig(
     class Tailwind(
         override val config: String,
         override val css: String,
-        override val baseColor: String,
-        val cssVariables: Boolean,
+        val baseColor: String,
+        val cssVariables: Boolean = true,
         val prefix: String = ""
     ) : Config.Tailwind()
 
@@ -47,8 +47,8 @@ class ReactConfig(
      */
     @Serializable
     class Aliases(
-        override val components: String,
-        override val utils: String,
+        val components: String,
+        val utils: String,
         val ui: String? = null
     ) : Config.Aliases()
 }

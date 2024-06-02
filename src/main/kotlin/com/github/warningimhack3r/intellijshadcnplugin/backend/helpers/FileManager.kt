@@ -1,5 +1,7 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -20,16 +22,18 @@ class FileManager(private val project: Project) {
         path.substringAfter(deepestRelativePath).split('/').filterNot { it.isEmpty() }.also {
             log.debug("Creating subdirectories ${it.joinToString(", ")}")
         }.forEach { subdirectory ->
-            deepest = deepest.createChildDirectory(this, subdirectory)
+            deepest = runWriteAction { deepest.createChildDirectory(this, subdirectory) }
         }
-        deepest.createChildData(this, file.name).setBinaryContent(file.text.toByteArray()).also {
+        runWriteAction {
+            deepest.createChildData(this, file.name).setBinaryContent(file.text.toByteArray())
+        }.also {
             log.debug("Saved file ${file.name} under ${deepest.path}")
         }
     }
 
     fun deleteFile(file: VirtualFile): Boolean {
         return try {
-            file.delete(this).let { true }
+            runWriteAction { file.delete(this) }.let { true }
         } catch (e: IOException) {
             false
         }.also {
@@ -51,12 +55,14 @@ class FileManager(private val project: Project) {
             // a simple call to FilenameIndex.getVirtualFilesByName.
             // This is a dirty workaround to make it work on production,
             // because it works fine during local development.
-            FilenameIndex.getVirtualFilesByName(
-                "components.json",
-                GlobalSearchScope.projectScope(project)
-            ).firstOrNull().also {
+            runReadAction {
+                FilenameIndex.getVirtualFilesByName(
+                    "package.json",
+                    GlobalSearchScope.projectScope(project)
+                )
+            }.firstOrNull().also {
                 if (it == null) {
-                    log.warn("components.json not found with the workaround")
+                    log.warn("package.json not found with the workaround")
                 }
             }?.parent?.children?.filter {
                 it.name.contains(name)
@@ -64,10 +70,12 @@ class FileManager(private val project: Project) {
                 log.warn("No file named $name found with the workaround")
             }
         } else {
-            FilenameIndex.getVirtualFilesByName(
-                name,
-                GlobalSearchScope.projectScope(project)
-            )
+            runReadAction {
+                FilenameIndex.getVirtualFilesByName(
+                    name,
+                    GlobalSearchScope.projectScope(project)
+                )
+            }
         }).filter { file ->
             !file.path.contains("/node_modules/") && !file.path.contains("/.git/")
         }.sortedBy { file ->
@@ -79,7 +87,8 @@ class FileManager(private val project: Project) {
 
     private fun getDeepestFileForPath(filePath: String): VirtualFile {
         var paths = filePath.split('/')
-        var currentFile = getVirtualFilesByName(paths.first()).firstOrNull() ?: throw NoSuchFileException("No file found at path $filePath")
+        var currentFile = getVirtualFilesByName(paths.first()).firstOrNull()
+            ?: throw NoSuchFileException("No file found at path $filePath")
         paths = paths.drop(1)
         for (path in paths) {
             val child = currentFile.findChild(path)

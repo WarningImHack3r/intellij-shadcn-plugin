@@ -11,6 +11,7 @@ class ToolWindowListener(private val project: Project) : ToolWindowManagerListen
         private val log = logger<ToolWindowListener>()
         private const val TOOL_WINDOW_ID = "shadcn/ui"
     }
+
     private var isToolWindowOpen: Boolean? = null
 
     override fun stateChanged(toolWindowManager: ToolWindowManager) {

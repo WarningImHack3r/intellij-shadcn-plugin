@@ -15,14 +15,11 @@ class NotificationManager(val project: Project? = null) {
         content: String,
         type: NotificationType = NotificationType.INFORMATION,
         actions: List<NotificationAction> = emptyList()
-    ) =  Notification(
-            "shadcn/ui",
-            title,
-            content,
-            type
-        ).apply {
-            actions.forEach { addAction(it) }
-        }
+    ) = Notification(
+        "shadcn/ui", title, content, type
+    ).apply {
+        actions.forEach { addAction(it) }
+    }
 
     private fun sendNotification(
         notification: Notification,
@@ -45,7 +42,11 @@ class NotificationManager(val project: Project? = null) {
         type: NotificationType = NotificationType.INFORMATION,
         actions: (Notification) -> List<NotificationAction> = { emptyList() }
     ) = sendNotification(
-        createNotification(title, content, type).apply { actions(this).forEach { addAction(it) } },
+        createNotification(title, content, type).apply {
+            actions(this).forEach { action ->
+                addAction(action)
+            }
+        },
     )
 
     fun sendNotificationAndHide(
@@ -54,7 +55,10 @@ class NotificationManager(val project: Project? = null) {
         type: NotificationType = NotificationType.INFORMATION,
         actions: (Notification) -> List<NotificationAction> = { emptyList() }
     ) = sendNotification(
-        createNotification(title, content, type).apply { actions(this).forEach { addAction(it) } },
-        true
+        createNotification(title, content, type).apply {
+            actions(this).forEach { action ->
+                addAction(action)
+            }
+        }, true
     )
 }

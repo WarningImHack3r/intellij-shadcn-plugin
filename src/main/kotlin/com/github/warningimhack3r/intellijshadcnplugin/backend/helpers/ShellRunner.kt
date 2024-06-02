@@ -8,6 +8,7 @@ class ShellRunner(private val project: Project? = null) {
     companion object {
         private val log = logger<ShellRunner>()
     }
+
     private val failedCommands = mutableSetOf<String>()
 
     private fun isWindows() = System.getProperty("os.name").lowercase().contains("win")
@@ -36,7 +37,10 @@ class ShellRunner(private val project: Project? = null) {
             }
         } catch (e: Exception) {
             if (isWindows() && !commandName.endsWith(".cmd")) {
-                log.warn("Failed to execute \"${command.joinToString(" ")}\". Trying to execute \"$commandName.cmd\" instead", e)
+                log.warn(
+                    "Failed to execute \"${command.joinToString(" ")}\". Trying to execute \"$commandName.cmd\" instead",
+                    e
+                )
                 failedCommands.add(commandName)
                 return execute(arrayOf("$commandName.cmd") + command.drop(1).toTypedArray())
             }

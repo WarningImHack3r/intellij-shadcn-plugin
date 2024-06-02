@@ -1,10 +1,10 @@
 [versions]
-kotlin = "1.9.23"
+kotlin = "2.0.0"
 serialization = "1.6.3"
 changelog = "2.2.0"
 gradleIntelliJPlugin = "1.17.3"
-qodana = "2023.3.2"
-kover = "0.7.6"
+qodana = "2024.1.5"
+kover = "0.8.0"
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }

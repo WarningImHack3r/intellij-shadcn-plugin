@@ -2,17 +2,17 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Config
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Component
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
-import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
-import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.project.Project
-import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.PsiFile
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -23,7 +23,8 @@ import java.nio.file.NoSuchFileException
 
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
     private val log = logger<Source<C>>()
-    abstract var framework: String
+    private var config: C? = null
+
     protected val domain: String
         get() = URI(getLocalConfig().`$schema`).let { uri ->
             "${uri.scheme}://${uri.host}".also {
@@ -36,43 +37,63 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         allowComments = true
     }
 
+    protected open val configFile = "components.json"
+
+    abstract val framework: String
+
+    // Paths
+    protected abstract fun getURLPathForComponent(componentName: String): String
+
+    protected abstract fun getLocalPathForComponents(): String
+
     // Utility methods
     protected fun getLocalConfig(): C {
-        val file = "components.json"
-        return FileManager(project).getFileContentsAtPath(file)?.let {
-            log.debug("Parsing config from $file")
+        return config?.also {
+            log.debug("Returning cached config")
+        } ?: FileManager(project).getFileContentsAtPath(configFile)?.let {
+            log.debug("Parsing config from $configFile")
             try {
-                Json.decodeFromString(serializer, it).also { config ->
-                    log.debug("Parsed config: ${config.javaClass.name}")
+                Json.decodeFromString(serializer, it).also {
+                    log.debug("Parsed config")
                 }
             } catch (e: Exception) {
-                throw UnparseableConfigException(project, "Unable to parse $file", e)
+                throw UnparseableConfigException(project, configFile, e)
             }
-        } ?: throw NoSuchFileException("$file not found")
+        }?.also {
+            if (config == null) {
+                log.debug("Caching config")
+                config = it
+            }
+        } ?: throw NoSuchFileException("$configFile not found")
     }
 
     protected abstract fun usesDirectoriesForComponents(): Boolean
 
     protected abstract fun resolveAlias(alias: String): String
 
-    protected fun cleanAlias(alias: String): String = if (alias.startsWith("\$")) {
-        "\\$alias" // fixes Kotlin silently crashing when the replacement starts with $ with a regex
-    } else alias
+    /**
+     * Escapes the value if it starts with a $. MUST be used when [String.replace]
+     * is used with a [Regex] as a first argument and when the second may start with a $.
+     * Otherwise, Kotlin will silently fail.
+     *
+     * @param value The value to escape
+     * @return The value, escaped if necessary
+     */
+    protected fun escapeRegexValue(value: String) = if (value.startsWith("\$")) {
+        "\\$value" // fixes Kotlin silently failing when the replacement starts with $ with a regex
+    } else value
 
     protected open fun adaptFileExtensionToConfig(extension: String): String = extension
 
-    protected abstract fun adaptFileToConfig(contents: String): String
+    protected abstract fun adaptFileToConfig(file: PsiFile)
 
     protected open fun fetchComponent(componentName: String): ComponentWithContents {
-        return RequestSender.sendRequest("$domain/registry/styles/${getLocalConfig().style}/$componentName.json")
+        return RequestSender.sendRequest("$domain/${getURLPathForComponent(componentName)}")
             .ok { Json.decodeFromString(it.body) } ?: throw Exception("Component $componentName not found")
     }
 
-    protected fun fetchColors(): JsonElement {
-        val baseColor = getLocalConfig().tailwind.baseColor
-        return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
-            Json.parseToJsonElement(it.body)
-        } ?: throw Exception("Colors not found")
+    protected open fun fetchColors(): JsonElement {
+        throw NoSuchMethodException("Not implemented")
     }
 
     protected open fun getRegistryDependencies(component: ComponentWithContents): List<ComponentWithContents> {
@@ -95,7 +116,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     open fun getInstalledComponents(): List<String> {
         return FileManager(project).getFileAtPath(
-            "${resolveAlias(getLocalConfig().aliases.components)}/ui"
+            "${resolveAlias(getLocalPathForComponents())}/ui"
         )?.children?.map { file ->
             if (file.isDirectory) file.name else file.name.substringBeforeLast(".")
         }?.sorted()?.also {
@@ -106,6 +127,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     }
 
     open fun addComponent(componentName: String) {
+        val componentsPath = resolveAlias(getLocalPathForComponents())
         // Install component
         val component = fetchComponent(componentName)
         val installedComponents = getInstalledComponents()
@@ -118,7 +140,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             log.debug("Installing ${it.size} components: ${it.joinToString(", ") { component -> component.name }}")
         }.forEach { downloadedComponent ->
             val path =
-                "${resolveAlias(getLocalConfig().aliases.components)}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
+                "${componentsPath}/${component.type.substringAfterLast(":")}" + if (usesDirectoriesForComponents()) {
                     "/${downloadedComponent.name}"
                 } else ""
             // Check for deprecated components
@@ -139,7 +161,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                         listOf(
                             NotificationAction.createSimple("Remove " + if (multipleFiles) "them" else "it") {
                                 remotelyDeletedFiles.forEach { file ->
-                                    runWriteAction { fileManager.deleteFile(file) }
+                                    fileManager.deleteFile(file)
                                 }
                                 log.info(
                                     "Removed deprecated file${if (multipleFiles) "s" else ""} from ${downloadedComponent.name} (${
@@ -162,13 +184,10 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 }
             }
             downloadedComponent.files.forEach { file ->
-                val psiFile = PsiFileFactory.getInstance(project).createFileFromText(
-                    adaptFileExtensionToConfig(file.name),
-                    FileTypeManager.getInstance().getFileTypeByExtension(
-                        adaptFileExtensionToConfig(file.name).substringAfterLast('.')
-                    ),
-                    adaptFileToConfig(file.content)
+                val psiFile = PsiHelper.createPsiFile(
+                    project, adaptFileExtensionToConfig(file.name), file.content
                 )
+                adaptFileToConfig(psiFile)
                 fileManager.saveFileAtPath(psiFile, path)
             }
         }
@@ -210,14 +229,21 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     open fun isComponentUpToDate(componentName: String): Boolean {
         val remoteComponent = fetchComponent(componentName)
+        val componentPath =
+            "${resolveAlias(getLocalPathForComponents())}/${remoteComponent.type.substringAfterLast(":")}${
+                if (usesDirectoriesForComponents()) {
+                    "/${remoteComponent.name}"
+                } else ""
+            }"
+        val fileManager = FileManager(project)
         return remoteComponent.files.all { file ->
-            (FileManager(project).getFileContentsAtPath(
-                "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${
-                    if (usesDirectoriesForComponents()) {
-                        "/${remoteComponent.name}"
-                    } else ""
-                }/${file.name}"
-            ) == adaptFileToConfig(file.content)).also {
+            val psiFile = PsiHelper.createPsiFile(
+                project, adaptFileExtensionToConfig(file.name), file.content
+            )
+            adaptFileToConfig(psiFile)
+            (fileManager.getFileContentsAtPath("$componentPath/${file.name}") == runReadAction {
+                psiFile.text
+            }).also {
                 log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
             }
         }
@@ -226,7 +252,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     open fun removeComponent(componentName: String) {
         val remoteComponent = fetchComponent(componentName)
         val componentsDir =
-            "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}"
+            "${resolveAlias(getLocalPathForComponents())}/${remoteComponent.type.substringAfterLast(":")}"
         if (usesDirectoriesForComponents()) {
             FileManager(project).deleteFileAtPath("$componentsDir/${remoteComponent.name}")
         } else {
