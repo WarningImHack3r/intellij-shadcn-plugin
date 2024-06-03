@@ -1,9 +1,5 @@
-package com.github.warningimhack3r.intellijshadcnplugin
+package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
 
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ClassReplacementVisitor
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.SvelteClassReplacementVisitor
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import kotlin.reflect.KClass

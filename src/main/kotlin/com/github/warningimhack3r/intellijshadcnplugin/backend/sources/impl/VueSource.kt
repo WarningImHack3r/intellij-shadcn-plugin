@@ -16,7 +16,7 @@ import com.intellij.psi.PsiFile
 import kotlinx.serialization.json.*
 import java.nio.file.NoSuchFileException
 
-class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
+open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
     companion object {
         private val log = logger<VueSource>()
         private var isJsUnsupportedNotified = false

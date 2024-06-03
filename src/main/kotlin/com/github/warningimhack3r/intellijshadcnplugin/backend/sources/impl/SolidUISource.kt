@@ -16,7 +16,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
-class SolidUISource(project: Project) : Source<SolidUIConfig>(project, SolidUIConfig.serializer()) {
+open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, SolidUIConfig.serializer()) {
     companion object {
         private val log = logger<SolidUISource>()
         private var isJsUnsupportedNotified = false
@@ -77,9 +77,9 @@ class SolidUISource(project: Project) : Source<SolidUIConfig>(project, SolidUICo
 
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
-        importsPackagesReplacementVisitor.replaceImports visitor@{ `package` ->
-            val pathAlias = config.aliases.path.replace("/*", "")
-            return@visitor `package`
+        val pathAlias = config.aliases.path.replace("/*", "")
+        importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
+            return@replacer `package`
                 .replace("~/registry/ui", "$pathAlias/components/ui")
                 .replace("~/lib/utils", "$pathAlias/lib/utils")
         }

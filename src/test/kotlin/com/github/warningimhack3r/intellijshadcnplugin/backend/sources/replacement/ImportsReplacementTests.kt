@@ -1,6 +1,5 @@
-package com.github.warningimhack3r.intellijshadcnplugin
+package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
 
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
