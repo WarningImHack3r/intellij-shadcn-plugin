@@ -23,6 +23,7 @@ import java.nio.file.NoSuchFileException
 
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
     companion object {
+        @JvmStatic
         protected val tsConfigJson = Json {
             isLenient = true
 //            allowTrailingCommas = true
