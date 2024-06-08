@@ -15,7 +15,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
-class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.serializer()) {
+open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.serializer()) {
     companion object {
         private val log = logger<SolidSource>()
     }
@@ -63,9 +63,9 @@ class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.s
 
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
-        importsPackagesReplacementVisitor.replaceImports visitor@{ `package` ->
+        importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
             if (`package` == "@/libs/cn") {
-                return@visitor config.aliases.utils
+                return@replacer config.aliases.utils
             }
             `package`
         }

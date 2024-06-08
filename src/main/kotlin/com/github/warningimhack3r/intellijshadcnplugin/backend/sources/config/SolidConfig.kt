@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 @Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117")
 @Serializable
 class SolidConfig(
-    override val `$schema`: String = "",
+    override val `$schema`: String = "https://shadcn-solid.vercel.app/schema.json",
     override val tailwind: Tailwind? = null,
     val uno: Uno? = null,
     override val aliases: Aliases

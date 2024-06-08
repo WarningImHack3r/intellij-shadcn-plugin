@@ -18,7 +18,7 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.*
 import java.nio.file.NoSuchFileException
 
-class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfig.serializer()) {
+open class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfig.serializer()) {
     companion object {
         private val log = logger<SvelteSource>()
     }
@@ -94,7 +94,7 @@ class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfi
         importsPackagesReplacementVisitor.replaceImports { `package` ->
             `package`
                 .replace(Regex("^\\\$lib/registry/[^/]+"), escapeRegexValue(config.aliases.components))
-                .replace("\$lib/utils", escapeRegexValue(config.aliases.utils))
+                .replace("\$lib/utils", config.aliases.utils)
         }
     }
 

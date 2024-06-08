@@ -47,7 +47,21 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     protected abstract fun getLocalPathForComponents(): String
 
     // Utility methods
-    protected fun getLocalConfig(): C {
+    /**
+     * Gets the local shadcn config, specified by the [configFile] name.
+     * If the config is already cached, it will return the cached config;
+     * otherwise, it will try to find it in the project FS, read it and
+     * parse it before caching it.
+     *
+     * Note: This method is `open` **ONLY** so that it can be overridden in
+     * tests. It should **NOT** be overridden in regular implementations.
+     *
+     * @throws NoSuchFileException If the config is not found
+     * @throws UnparseableConfigException If the config is found but cannot be parsed
+     *
+     * @return The local shadcn config
+     */
+    protected open fun getLocalConfig(): C {
         return config?.also {
             log.debug("Returning cached config")
         } ?: FileManager(project).getFileContentsAtPath(configFile)?.let {

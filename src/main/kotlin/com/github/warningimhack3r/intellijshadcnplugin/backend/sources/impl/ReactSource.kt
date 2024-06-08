@@ -18,7 +18,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
-class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.serializer()) {
+open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.serializer()) {
     companion object {
         private val log = logger<ReactSource>()
         private var isJsUnsupportedNotified = false
@@ -78,9 +78,9 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
 
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
-        importsPackagesReplacementVisitor.replaceImports visitor@{ `package` ->
+        importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
             if (`package`.startsWith("@/registry/")) {
-                return@visitor if (config.aliases.ui != null) {
+                return@replacer if (config.aliases.ui != null) {
                     `package`.replace(Regex("^@/registry/[^/]+/ui"), escapeRegexValue(config.aliases.ui))
                 } else {
                     `package`.replace(
@@ -89,7 +89,7 @@ class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.s
                     )
                 }
             } else if (`package` == "@/lib/utils") {
-                return@visitor config.aliases.utils
+                return@replacer config.aliases.utils
             }
             `package`
         }

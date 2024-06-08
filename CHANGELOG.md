@@ -12,6 +12,12 @@
 
 ## [Unreleased]
 
+## [0.8.2] - 2024-06-03
+
+### Fixed
+
+- Fix another regression with imports replacement, improve its overall accuracy
+
 ## [0.8.1] - 2024-05-20
 
 ### Fixed
@@ -99,7 +105,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.1...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.2...HEAD
+[0.8.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.7...v0.8.0
 [0.7.7]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.6...v0.7.7
