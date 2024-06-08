@@ -22,6 +22,14 @@ import java.net.URI
 import java.nio.file.NoSuchFileException
 
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
+    companion object {
+        protected val tsConfigJson = Json {
+            isLenient = true
+            allowTrailingCommas = true
+            allowComments = true
+        }
+    }
+
     private val log = logger<Source<C>>()
     private var config: C? = null
 
@@ -31,11 +39,6 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 log.debug("Parsed domain: $it")
             }
         }
-    protected val tsConfigJson = Json {
-        isLenient = true
-        allowTrailingCommas = true
-        allowComments = true
-    }
 
     protected open val configFile = "components.json"
 

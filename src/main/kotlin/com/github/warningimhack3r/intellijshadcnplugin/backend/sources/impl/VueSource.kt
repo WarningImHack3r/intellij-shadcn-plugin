@@ -13,9 +13,7 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 import java.nio.file.NoSuchFileException
 
 open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
@@ -40,11 +38,7 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
         }
 
         fun resolvePath(configFile: String): String? {
-            return tsConfigJson.parseToJsonElement(configFile
-                .split("\n")
-                .filterNot { it.trim().startsWith("//") } // remove comments
-                .joinToString("\n")
-            )
+            return tsConfigJson.parseToJsonElement(configFile)
                 .jsonObject["compilerOptions"]
                 ?.jsonObject?.get("paths")
                 ?.jsonObject?.get("${alias.substringBefore("/")}/*")

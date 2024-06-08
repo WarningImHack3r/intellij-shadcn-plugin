@@ -6,6 +6,9 @@ gradleIntelliJPlugin = "1.17.3"
 qodana = "2024.1.5"
 kover = "0.8.0"
 
+[libraries]
+serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
 gradleIntelliJPlugin = { id = "org.jetbrains.intellij", version.ref = "gradleIntelliJPlugin" }
