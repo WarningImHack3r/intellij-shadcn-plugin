@@ -25,8 +25,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     companion object {
         protected val tsConfigJson = Json {
             isLenient = true
-            allowTrailingCommas = true
-            allowComments = true
+//            allowTrailingCommas = true
+//            allowComments = true
         }
     }
 
