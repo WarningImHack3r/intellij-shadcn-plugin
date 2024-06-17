@@ -23,10 +23,12 @@ import java.nio.file.NoSuchFileException
 
 abstract class Source<C : Config>(val project: Project, private val serializer: KSerializer<C>) {
     companion object {
-        @JvmStatic
-        protected val tsConfigJson = Json {
+        private val tsConfigJson = Json {
+            // Lax parsing (unquoted keys, formatting, etc.)
             isLenient = true
+            // Allow trailing commas
 //            allowTrailingCommas = true
+            // Allow comments
 //            allowComments = true
         }
     }
@@ -102,6 +104,21 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     } else value
 
     protected open fun adaptFileExtensionToConfig(extension: String): String = extension
+
+    protected fun parseTsConfig(config: String): JsonElement {
+        // Temporary workaround until kotlinx.serialization is upgraded
+        val cleanConfig = config
+            // Remove /* */ comments
+            .replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
+            .split("\n").joinToString("\n") { line ->
+                // Remove // comments
+                line.substringBefore("//").trim()
+            }
+            // Remove trailing commas
+            .replace(Regex(",\\s*}"), "\n}")
+            .replace(Regex(",\\s*]"), "\n]")
+        return tsConfigJson.parseToJsonElement(cleanConfig)
+    }
 
     protected abstract fun adaptFileToConfig(file: PsiFile)
 

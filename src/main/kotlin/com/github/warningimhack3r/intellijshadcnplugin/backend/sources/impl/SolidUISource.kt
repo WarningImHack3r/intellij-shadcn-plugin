@@ -39,7 +39,7 @@ open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, Soli
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
         val tsConfig = FileManager(project).getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
-        val aliasPath = tsConfigJson.parseToJsonElement(tsConfig)
+        val aliasPath = parseTsConfig(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get("${alias.substringBefore("/")}/*")
