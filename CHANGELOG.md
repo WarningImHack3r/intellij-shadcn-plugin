@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Add support for `tsconfig.json`/`jsconfig.json` files with JSON5 features (#32, #45)
+
 ## [0.8.2] - 2024-06-03
 
 ### Fixed
