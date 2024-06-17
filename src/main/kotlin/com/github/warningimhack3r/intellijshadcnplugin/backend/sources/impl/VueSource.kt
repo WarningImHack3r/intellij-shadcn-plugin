@@ -38,11 +38,7 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
         }
 
         fun resolvePath(configFile: String): String? {
-            return Json.parseToJsonElement(configFile
-                .split("\n")
-                .filterNot { it.trim().startsWith("//") } // remove comments
-                .joinToString("\n")
-            )
+            return parseTsConfig(configFile)
                 .jsonObject["compilerOptions"]
                 ?.jsonObject?.get("paths")
                 ?.jsonObject?.get("${alias.substringBefore("/")}/*")

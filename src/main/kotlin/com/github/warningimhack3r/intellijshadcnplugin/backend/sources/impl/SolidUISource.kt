@@ -10,7 +10,6 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -40,7 +39,7 @@ open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, Soli
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
         val tsConfig = FileManager(project).getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
-        val aliasPath = Json.parseToJsonElement(tsConfig)
+        val aliasPath = parseTsConfig(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get("${alias.substringBefore("/")}/*")

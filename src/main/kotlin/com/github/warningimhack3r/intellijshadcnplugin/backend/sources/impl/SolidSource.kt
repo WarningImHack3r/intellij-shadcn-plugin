@@ -44,7 +44,7 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
         val configFile = "tsconfig.json"
         val tsConfig = FileManager(project).getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
-        val aliasPath = Json.parseToJsonElement(tsConfig)
+        val aliasPath = parseTsConfig(tsConfig)
             .jsonObject["compilerOptions"]
             ?.jsonObject?.get("paths")
             ?.jsonObject?.get("${alias.substringBefore("/")}/*")
