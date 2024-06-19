@@ -27,7 +27,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             // Lax parsing (unquoted keys, formatting, etc.)
             isLenient = true
             // Allow trailing commas
-//            allowTrailingCommas = true
+//            allowTrailingComma = true
             // Allow comments
 //            allowComments = true
         }
