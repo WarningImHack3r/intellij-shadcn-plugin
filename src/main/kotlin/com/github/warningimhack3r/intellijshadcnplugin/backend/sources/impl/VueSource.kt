@@ -37,8 +37,8 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
             return alias
         }
 
-        fun resolvePath(configFile: String): String? {
-            return parseTsConfig(configFile)
+        fun resolvePath(configFile: String, fileName: String): String? {
+            return parseTsConfig(configFile, fileName)
                 .jsonObject["compilerOptions"]
                 ?.jsonObject?.get("paths")
                 ?.jsonObject?.get("${alias.substringBefore("/")}/*")
@@ -54,8 +54,8 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
 
         val tsConfig = FileManager(project).getFileContentsAtPath(tsConfigLocation)
             ?: throw NoSuchFileException("$tsConfigLocation not found")
-        val aliasPath = (resolvePath(tsConfig) ?: if (config.typescript) {
-            resolvePath("tsconfig.app.json")
+        val aliasPath = (resolvePath(tsConfig, tsConfigLocation) ?: if (config.typescript) {
+            resolvePath("tsconfig.app.json", "tsconfig.app.json")
         } else null) ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/")).also {

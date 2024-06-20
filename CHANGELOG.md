@@ -12,6 +12,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- Temporarily reduce back bundle size by removing unused dependencies
+
+### Fixed
+
+- Fix a crash due to an edge case with tsconfig.json files with JSON5 patterns (#48)
+
 ## [0.8.3] - 2024-06-17
 
 ### Added

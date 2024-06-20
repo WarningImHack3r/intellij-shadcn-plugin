@@ -26,9 +26,9 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         private val tsConfigJson = Json {
             // Lax parsing (unquoted keys, formatting, etc.)
             isLenient = true
-            // Allow trailing commas
+            // Allow trailing commas (1.6.1+)
 //            allowTrailingComma = true
-            // Allow comments
+            // Allow comments (1.7.0+)
 //            allowComments = true
         }
     }
@@ -105,7 +105,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     protected open fun adaptFileExtensionToConfig(extension: String): String = extension
 
-    protected fun parseTsConfig(config: String): JsonElement {
+    protected fun parseTsConfig(config: String, fileName: String = "tsconfig.json"): JsonElement {
         // Temporary workaround until kotlinx.serialization is upgraded
         val cleanConfig = config
             // Remove /* */ comments
@@ -117,7 +117,20 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             // Remove trailing commas
             .replace(Regex(",\\s*}"), "\n}")
             .replace(Regex(",\\s*]"), "\n]")
-        return tsConfigJson.parseToJsonElement(cleanConfig)
+        return try {
+            tsConfigJson.parseToJsonElement(cleanConfig)
+        } catch (e: Exception) {
+            log.warn("Failed to parse $fileName using replacements", e)
+            try {
+                tsConfigJson.parseToJsonElement(config)
+            } catch (e: Exception) {
+                log.error(
+                    "Failed to parse $fileName. Please try removing comments and trailing commas from it and try again.",
+                    e
+                )
+                throw e
+            }
+        }
     }
 
     protected abstract fun adaptFileToConfig(file: PsiFile)
