@@ -13,7 +13,7 @@ object SourceScanner {
     val log = logger<SourceScanner>()
 
     fun findShadcnImplementation(project: Project): Source<*>? {
-        val fileManager = FileManager(project)
+        val fileManager = FileManager.getInstance(project)
         return fileManager.getFileContentsAtPath("components.json")?.let { componentsJson ->
             val contents = Json.parseToJsonElement(componentsJson).jsonObject
             val schema = contents["\$schema"]?.jsonPrimitive?.content ?: ""

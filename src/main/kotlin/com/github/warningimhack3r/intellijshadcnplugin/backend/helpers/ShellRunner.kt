@@ -1,24 +1,31 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import java.io.File
 
-class ShellRunner(private val project: Project? = null) {
+@Service(Service.Level.PROJECT)
+class ShellRunner(private val project: Project) {
     companion object {
         private val log = logger<ShellRunner>()
+
+        @JvmStatic
+        fun getInstance(project: Project): ShellRunner = project.service()
     }
 
-    private val failedCommands = mutableSetOf<String>()
+    private val failedWindowsPrograms = mutableSetOf<String>()
 
     private fun isWindows() = System.getProperty("os.name").lowercase().contains("win")
 
     fun execute(command: Array<String>): String? {
-        val commandName = command.firstOrNull() ?: return null.also {
+        val program = command.firstOrNull() ?: return null.also {
             log.warn("No command name provided")
         }
-        if (isWindows() && failedCommands.contains(commandName)) {
-            command[0] = "$commandName.cmd"
+        if (isWindows() && failedWindowsPrograms.contains(program)) {
+            command[0] = "$program.cmd"
+            log.warn("(Re)trying command with .cmd extension: \"${command.joinToString(" ")}\"")
         }
         return try {
             val platformCommand = if (isWindows()) {
@@ -28,21 +35,25 @@ class ShellRunner(private val project: Project? = null) {
             } + command
             log.debug("Executing command: \"${platformCommand.joinToString(" ")}\"")
             val process = ProcessBuilder(*platformCommand)
-                .redirectOutput(ProcessBuilder.Redirect.PIPE)
                 .directory(project?.basePath?.let { File(it) })
                 .start()
             process.waitFor()
-            process.inputStream.bufferedReader().readText().also {
-                log.debug("Successfully executed \"${platformCommand.joinToString(" ")}\": $it")
+            val output = process.inputStream?.bufferedReader()?.readText()?.also {
+                log.debug("Successfully executed \"${platformCommand.joinToString(" ")}\" with output:\n$it")
             }
+            val error = process.errorStream?.bufferedReader()?.readText()
+            if (output.isNullOrBlank() && !error.isNullOrBlank()) {
+                log.warn("Error while executing \"${platformCommand.joinToString(" ")}\":\n${error.take(150)}")
+            }
+            output
         } catch (e: Exception) {
-            if (isWindows() && !commandName.endsWith(".cmd")) {
+            if (isWindows() && !program.endsWith(".cmd")) {
                 log.warn(
-                    "Failed to execute \"${command.joinToString(" ")}\". Trying to execute \"$commandName.cmd\" instead",
+                    "Failed to execute \"${command.joinToString(" ")}\". Trying to execute \"$program.cmd\" instead",
                     e
                 )
-                failedCommands.add(commandName)
-                return execute(arrayOf("$commandName.cmd") + command.drop(1).toTypedArray())
+                failedWindowsPrograms.add(program)
+                return execute(arrayOf("$program.cmd") + command.drop(1).toTypedArray())
             }
             log.warn("Error while executing \"${command.joinToString(" ")}\"", e)
             null

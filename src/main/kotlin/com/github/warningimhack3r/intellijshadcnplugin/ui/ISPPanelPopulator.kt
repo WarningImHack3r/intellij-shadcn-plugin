@@ -23,7 +23,7 @@ class ISPPanelPopulator(private val project: Project) {
         CoroutineScope(SupervisorJob() + Dispatchers.Default).async {
             return@async Pair(
                 SourceScanner.findShadcnImplementation(project),
-                FileManager(project).getVirtualFilesByName("package.json").size
+                FileManager.getInstance(project).getVirtualFilesByName("package.json").size
             )
         }.asCompletableFuture().thenApplyAsync { (source, packageJsonCount) ->
             log.info("Shadcn implementation detected: $source, package.json count: $packageJsonCount")

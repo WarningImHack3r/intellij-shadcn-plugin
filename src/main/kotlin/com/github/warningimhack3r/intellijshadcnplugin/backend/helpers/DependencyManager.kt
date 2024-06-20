@@ -2,19 +2,29 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 
+@Service(Service.Level.PROJECT)
 class DependencyManager(private val project: Project) {
+    companion object {
+        private val log = logger<DependencyManager>()
+
+        @JvmStatic
+        fun getInstance(project: Project): DependencyManager = project.service()
+    }
+
     enum class InstallationType {
         DEV,
         PROD
     }
 
     private fun getPackageManager(): String? {
-        val fileManager = FileManager(project)
+        val fileManager = FileManager.getInstance(project)
         return mapOf(
             "package-lock.json" to "npm",
             "pnpm-lock.yaml" to "pnpm",
@@ -34,9 +44,8 @@ class DependencyManager(private val project: Project) {
                 if (installationType == InstallationType.DEV) "-D" else null,
                 *dependencyNames.toTypedArray()
             ).toTypedArray()
-            val res = ShellRunner(project).execute(command)
             // check if the installation was successful
-            if (res == null) {
+            if (ShellRunner.getInstance(project).execute(command) == null) {
                 NotificationManager(project).sendNotification(
                     "Failed to install dependencies",
                     "Failed to install dependencies: ${dependencyNames.joinToString { ", " }} (${command.joinToString(" ")}). Please install it manually.",
@@ -54,9 +63,8 @@ class DependencyManager(private val project: Project) {
                 "remove",
                 *dependencyNames.toTypedArray()
             ).toTypedArray()
-            val res = ShellRunner(project).execute(command)
             // check if the uninstallation was successful
-            if (res == null) {
+            if (ShellRunner.getInstance(project).execute(command) == null) {
                 NotificationManager(project).sendNotification(
                     "Failed to uninstall dependencies",
                     "Failed to uninstall dependencies (${command.joinToString(" ")}). Please uninstall them manually.",
@@ -68,14 +76,14 @@ class DependencyManager(private val project: Project) {
 
     fun getInstalledDependencies(): List<String> {
         // Read the package.json file
-        return FileManager(project).getFileContentsAtPath("package.json")?.let { packageJson ->
+        return FileManager.getInstance(project).getFileContentsAtPath("package.json")?.let { packageJson ->
             Json.parseToJsonElement(packageJson).jsonObject.filter {
                 it.key == "dependencies" || it.key == "devDependencies"
             }.map { it.value.jsonObject.keys }.flatten().also {
-                logger<DependencyManager>().debug("Installed dependencies: $it")
+                log.debug("Installed dependencies: $it")
             }
         } ?: emptyList<String>().also {
-            logger<DependencyManager>().error("package.json not found")
+            log.error("package.json not found")
         }
     }
 

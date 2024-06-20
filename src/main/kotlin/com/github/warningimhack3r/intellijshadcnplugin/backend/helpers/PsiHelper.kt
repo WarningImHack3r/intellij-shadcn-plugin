@@ -8,7 +8,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileFactory
 
 object PsiHelper {
-
     fun createPsiFile(project: Project, fileName: String, text: String): PsiFile {
         assert(fileName.contains('.')) { "File name must contain an extension" }
         return runReadAction {

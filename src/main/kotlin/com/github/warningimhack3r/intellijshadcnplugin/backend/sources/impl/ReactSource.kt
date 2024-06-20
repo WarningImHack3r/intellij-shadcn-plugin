@@ -37,7 +37,7 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
             return alias
         }
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
-        val tsConfig = FileManager(project).getFileContentsAtPath(configFile)
+        val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = parseTsConfig(tsConfig)
             .jsonObject["compilerOptions"]

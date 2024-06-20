@@ -70,7 +70,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     protected open fun getLocalConfig(): C {
         return config?.also {
             log.debug("Returning cached config")
-        } ?: FileManager(project).getFileContentsAtPath(configFile)?.let {
+        } ?: FileManager.getInstance(project).getFileContentsAtPath(configFile)?.let {
             log.debug("Parsing config from $configFile")
             try {
                 Json.decodeFromString(serializer, it).also {
@@ -152,7 +152,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     }
 
     // Public methods
-    open fun fetchAllComponents(): List<Component> {
+    fun fetchAllComponents(): List<Component> {
         return RequestSender.sendRequest("$domain/registry/index.json").ok {
             Json.decodeFromString<List<Component>>(it.body)
         }?.also {
@@ -162,8 +162,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
     }
 
-    open fun getInstalledComponents(): List<String> {
-        return FileManager(project).getFileAtPath(
+    fun getInstalledComponents(): List<String> {
+        return FileManager.getInstance(project).getFileAtPath(
             "${resolveAlias(getLocalPathForComponents())}/ui"
         )?.children?.map { file ->
             if (file.isDirectory) file.name else file.name.substringBeforeLast(".")
@@ -174,12 +174,12 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
     }
 
-    open fun addComponent(componentName: String) {
+    fun addComponent(componentName: String) {
         val componentsPath = resolveAlias(getLocalPathForComponents())
         // Install component
         val component = fetchComponent(componentName)
         val installedComponents = getInstalledComponents()
-        val fileManager = FileManager(project)
+        val fileManager = FileManager.getInstance(project)
         val notifManager = NotificationManager(project)
         log.debug("Installing ${component.name} (installed: ${installedComponents.joinToString(", ")})")
         setOf(component, *getRegistryDependencies(component).filter {
@@ -241,7 +241,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
 
         // Install dependencies
-        val depsManager = DependencyManager(project)
+        val depsManager = DependencyManager.getInstance(project)
         val depsToInstall = component.dependencies.filter { dependency ->
             !depsManager.isDependencyInstalled(dependency)
         }
@@ -275,7 +275,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
     }
 
-    open fun isComponentUpToDate(componentName: String): Boolean {
+    fun isComponentUpToDate(componentName: String): Boolean {
         val remoteComponent = fetchComponent(componentName)
         val componentPath =
             "${resolveAlias(getLocalPathForComponents())}/${remoteComponent.type.substringAfterLast(":")}${
@@ -283,7 +283,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     "/${remoteComponent.name}"
                 } else ""
             }"
-        val fileManager = FileManager(project)
+        val fileManager = FileManager.getInstance(project)
         return remoteComponent.files.all { file ->
             val psiFile = PsiHelper.createPsiFile(
                 project, adaptFileExtensionToConfig(file.name), file.content
@@ -302,10 +302,10 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         val componentsDir =
             "${resolveAlias(getLocalPathForComponents())}/${remoteComponent.type.substringAfterLast(":")}"
         if (usesDirectoriesForComponents()) {
-            FileManager(project).deleteFileAtPath("$componentsDir/${remoteComponent.name}")
+            FileManager.getInstance(project).deleteFileAtPath("$componentsDir/${remoteComponent.name}")
         } else {
             remoteComponent.files.forEach { file ->
-                FileManager(project).deleteFileAtPath("$componentsDir/${file.name}")
+                FileManager.getInstance(project).deleteFileAtPath("$componentsDir/${file.name}")
             }
         }
         // Remove dependencies no longer needed by any component
@@ -314,9 +314,10 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         val currentlyNeededDependencies = getInstalledComponents().map { component ->
             remoteComponents.find { it.name == component }?.dependencies ?: emptyList()
         }.flatten().toSet()
-        val uselessDependencies = DependencyManager(project).getInstalledDependencies().filter { dependency ->
-            dependency in allPossiblyNeededDependencies && dependency !in currentlyNeededDependencies
-        }
+        val uselessDependencies =
+            DependencyManager.getInstance(project).getInstalledDependencies().filter { dependency ->
+                dependency in allPossiblyNeededDependencies && dependency !in currentlyNeededDependencies
+            }
         if (uselessDependencies.isNotEmpty()) {
             val multipleDependencies = uselessDependencies.size > 1
             val notifManager = NotificationManager(project)
@@ -331,7 +332,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 listOf(
                     NotificationAction.createSimple("Remove") {
                         runAsync {
-                            DependencyManager(project).uninstallDependencies(uselessDependencies)
+                            DependencyManager.getInstance(project).uninstallDependencies(uselessDependencies)
                         }.then {
                             notifManager.sendNotificationAndHide(
                                 "Removed dependenc${if (multipleDependencies) "ies" else "y"}",

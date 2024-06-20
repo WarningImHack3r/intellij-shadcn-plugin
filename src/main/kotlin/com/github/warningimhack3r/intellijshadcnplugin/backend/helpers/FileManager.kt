@@ -2,6 +2,8 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.application.runWriteAction
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
@@ -11,9 +13,13 @@ import com.intellij.psi.search.GlobalSearchScope
 import java.io.IOException
 import java.nio.file.NoSuchFileException
 
+@Service(Service.Level.PROJECT)
 class FileManager(private val project: Project) {
     companion object {
         private val log = logger<FileManager>()
+
+        @JvmStatic
+        fun getInstance(project: Project): FileManager = project.service()
     }
 
     fun saveFileAtPath(file: PsiFile, path: String) {

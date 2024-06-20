@@ -37,14 +37,14 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
             log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
             return alias
         }
-        val usesKit = DependencyManager(project).isDependencyInstalled("@sveltejs/kit")
+        val usesKit = DependencyManager.getInstance(project).isDependencyInstalled("@sveltejs/kit")
         val tsConfigName = if (getLocalConfig().typescript) "tsconfig.json" else "jsconfig.json"
         val configFile = if (usesKit) ".svelte-kit/$tsConfigName" else tsConfigName
-        val fileManager = FileManager(project)
+        val fileManager = FileManager.getInstance(project)
         var tsConfig = fileManager.getFileContentsAtPath(configFile)
         if (tsConfig == null) {
             if (!usesKit) throw NoSuchFileException("Cannot get $configFile")
-            val res = ShellRunner(project).execute(arrayOf("npx", "svelte-kit", "sync"))
+            val res = ShellRunner.getInstance(project).execute(arrayOf("npx", "svelte-kit", "sync"))
             if (res == null) {
                 NotificationManager(project).sendNotification(
                     "Failed to generate $configFile",
