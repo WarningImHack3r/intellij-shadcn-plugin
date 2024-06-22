@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.8.5] - 2024-06-22
+
 ### Fixed
 
 - Fix additional dependencies installation not working with yarn (#51) (thanks [@shimizu-izumi](https://github.com/shimizu-izumi)!)
@@ -125,7 +127,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.1...v0.8.2
