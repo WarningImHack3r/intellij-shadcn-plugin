@@ -30,10 +30,10 @@ class DependencyManager(private val project: Project) {
         BUN("bun");
 
         fun getLockFileName() = when (this) {
-            NPM -> "package-lock.json"
-            PNPM -> "pnpm-lock.yaml"
-            YARN -> "yarn.lock"
-            BUN -> "bun.lockb"
+            NPM -> listOf("package-lock.json")
+            PNPM -> listOf("pnpm-lock.yaml")
+            YARN -> listOf("yarn.lock")
+            BUN -> listOf("bun.lockb", "bun.lock")
         }
 
         fun getInstallCommand() = when (this) {
@@ -44,8 +44,10 @@ class DependencyManager(private val project: Project) {
 
     private fun getPackageManager(): PackageManager? {
         val fileManager = FileManager.getInstance(project)
-        return enumValues<PackageManager>().firstOrNull {
-            fileManager.getVirtualFilesByName(it.getLockFileName()).isNotEmpty()
+        return enumValues<PackageManager>().firstOrNull { packageManager ->
+            packageManager.getLockFileName().any { lockFile ->
+                fileManager.getVirtualFilesByName(lockFile).isNotEmpty()
+            }
         }
     }
 
