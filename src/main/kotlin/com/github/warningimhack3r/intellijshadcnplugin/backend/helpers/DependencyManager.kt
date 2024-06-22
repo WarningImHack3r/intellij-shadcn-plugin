@@ -23,25 +23,29 @@ class DependencyManager(private val project: Project) {
         PROD
     }
 
-    private fun getPackageManager(): String? {
-        val fileManager = FileManager.getInstance(project)
-        return mapOf(
-            "package-lock.json" to "npm",
-            "pnpm-lock.yaml" to "pnpm",
-            "yarn.lock" to "yarn",
-            "bun.lockb" to "bun"
-        ).filter {
-            fileManager.getVirtualFilesByName(it.key).isNotEmpty()
-        }.values.firstOrNull()
+    enum class PackageManager(val command: String) {
+        NPM("npm"),
+        PNPM("pnpm"),
+        YARN("yarn"),
+        BUN("bun");
+
+        fun getLockFileName() = when (this) {
+            NPM -> "package-lock.json"
+            PNPM -> "pnpm-lock.yaml"
+            YARN -> "yarn.lock"
+            BUN -> "bun.lockb"
+        }
+
+        fun getInstallCommand() = when (this) {
+            YARN -> "add"
+            else -> "i"
+        }
     }
 
-    private fun getInstallCommand(packageManager: String): String {
-        return when (packageManager) {
-            "npm" -> "i"
-            "pnpm" -> "add"
-            "yarn" -> "add"
-            "bun" -> "add"
-            else -> throw IllegalArgumentException("Unknown package manager: $packageManager")
+    private fun getPackageManager(): PackageManager? {
+        val fileManager = FileManager.getInstance(project)
+        return PackageManager.entries.firstOrNull {
+            fileManager.getVirtualFilesByName(it.getLockFileName()).isNotEmpty()
         }
     }
 
@@ -49,8 +53,8 @@ class DependencyManager(private val project: Project) {
         getPackageManager()?.let { packageManager ->
             // install the dependency
             val command = listOfNotNull(
-                packageManager,
-                getInstallCommand(packageManager),
+                packageManager.command,
+                packageManager.getInstallCommand(),
                 if (installationType == InstallationType.DEV) "-D" else null,
                 *dependencyNames.toTypedArray()
             ).toTypedArray()
@@ -69,7 +73,7 @@ class DependencyManager(private val project: Project) {
         getPackageManager()?.let { packageManager ->
             // uninstall the dependencies
             val command = listOf(
-                packageManager,
+                packageManager.command,
                 "remove",
                 *dependencyNames.toTypedArray()
             ).toTypedArray()
