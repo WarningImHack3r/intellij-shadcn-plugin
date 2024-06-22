@@ -35,12 +35,22 @@ class DependencyManager(private val project: Project) {
         }.values.firstOrNull()
     }
 
+    private fun getInstallCommand(packageManager: String): String {
+        return when (packageManager) {
+            "npm" -> "i"
+            "pnpm" -> "add"
+            "yarn" -> "add"
+            "bun" -> "add"
+            else -> throw IllegalArgumentException("Unknown package manager: $packageManager")
+        }
+    }
+
     fun installDependencies(dependencyNames: List<String>, installationType: InstallationType = InstallationType.PROD) {
         getPackageManager()?.let { packageManager ->
             // install the dependency
             val command = listOfNotNull(
                 packageManager,
-                "i",
+                getInstallCommand(packageManager),
                 if (installationType == InstallationType.DEV) "-D" else null,
                 *dependencyNames.toTypedArray()
             ).toTypedArray()
