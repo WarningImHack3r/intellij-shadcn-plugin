@@ -35,7 +35,7 @@ class ShellRunner(private val project: Project) {
             } + command
             log.debug("Executing command: \"${platformCommand.joinToString(" ")}\"")
             val process = ProcessBuilder(*platformCommand)
-                .directory(project?.basePath?.let { File(it) })
+                .directory(project.basePath?.let { File(it) })
                 .start()
             process.waitFor()
             val output = process.inputStream?.bufferedReader()?.readText()?.also {

@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix additional dependencies installation not working with yarn (#51) (thanks [@shimizu-izumi](https://github.com/shimizu-izumi)!)
+
 ## [0.8.4] - 2024-06-20
 
 ### Changed
