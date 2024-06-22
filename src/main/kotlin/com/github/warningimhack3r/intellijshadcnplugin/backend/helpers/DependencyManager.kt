@@ -23,24 +23,40 @@ class DependencyManager(private val project: Project) {
         PROD
     }
 
-    private fun getPackageManager(): String? {
+    enum class PackageManager(val command: String) {
+        NPM("npm"),
+        PNPM("pnpm"),
+        YARN("yarn"),
+        BUN("bun");
+
+        fun getLockFileName() = when (this) {
+            NPM -> listOf("package-lock.json")
+            PNPM -> listOf("pnpm-lock.yaml")
+            YARN -> listOf("yarn.lock")
+            BUN -> listOf("bun.lockb", "bun.lock")
+        }
+
+        fun getInstallCommand() = when (this) {
+            YARN -> "add"
+            else -> "i"
+        }
+    }
+
+    private fun getPackageManager(): PackageManager? {
         val fileManager = FileManager.getInstance(project)
-        return mapOf(
-            "package-lock.json" to "npm",
-            "pnpm-lock.yaml" to "pnpm",
-            "yarn.lock" to "yarn",
-            "bun.lockb" to "bun"
-        ).filter {
-            fileManager.getVirtualFilesByName(it.key).isNotEmpty()
-        }.values.firstOrNull()
+        return enumValues<PackageManager>().firstOrNull { packageManager ->
+            packageManager.getLockFileName().any { lockFile ->
+                fileManager.getVirtualFilesByName(lockFile).isNotEmpty()
+            }
+        }
     }
 
     fun installDependencies(dependencyNames: List<String>, installationType: InstallationType = InstallationType.PROD) {
         getPackageManager()?.let { packageManager ->
             // install the dependency
             val command = listOfNotNull(
-                packageManager,
-                "i",
+                packageManager.command,
+                packageManager.getInstallCommand(),
                 if (installationType == InstallationType.DEV) "-D" else null,
                 *dependencyNames.toTypedArray()
             ).toTypedArray()
@@ -59,7 +75,7 @@ class DependencyManager(private val project: Project) {
         getPackageManager()?.let { packageManager ->
             // uninstall the dependencies
             val command = listOf(
-                packageManager,
+                packageManager.command,
                 "remove",
                 *dependencyNames.toTypedArray()
             ).toTypedArray()
