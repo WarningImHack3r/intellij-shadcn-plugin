@@ -44,7 +44,7 @@ class DependencyManager(private val project: Project) {
 
     private fun getPackageManager(): PackageManager? {
         val fileManager = FileManager.getInstance(project)
-        return PackageManager.entries.firstOrNull {
+        return enumValues<PackageManager>().firstOrNull {
             fileManager.getVirtualFilesByName(it.getLockFileName()).isNotEmpty()
         }
     }
