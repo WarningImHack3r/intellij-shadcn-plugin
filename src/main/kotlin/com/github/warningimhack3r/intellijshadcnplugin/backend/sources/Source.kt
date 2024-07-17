@@ -9,6 +9,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Co
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
@@ -247,14 +248,14 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
         if (depsToInstall.isEmpty()) return
         log.debug("Installing ${depsToInstall.size} dependencies: ${depsToInstall.joinToString(", ") { dependency -> dependency }}")
-        val dependenciesList = with(depsToInstall) {
+        val formattedDepsToInstall = with(depsToInstall) {
             if (size == 1) first() else {
                 "${dropLast(1).joinToString(", ")} and ${last()}"
             }
         }
         notifManager.sendNotification(
             "Installed ${component.name}",
-            "${component.name} requires $dependenciesList to be installed."
+            "${component.name} requires $formattedDepsToInstall to be installed."
         ) { notif ->
             mapOf(
                 "Install" to DependencyManager.InstallationType.PROD,
@@ -263,11 +264,21 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 NotificationAction.createSimple(label) {
                     runAsync {
                         depsManager.installDependencies(depsToInstall, installType)
-                    }.then {
-                        notifManager.sendNotificationAndHide(
-                            "Installed $dependenciesList",
-                            "Installed $dependenciesList for ${component.name}.",
-                        )
+                    }.then { installSuccess ->
+                        if (installSuccess) {
+                            log.info("Installed $formattedDepsToInstall for ${component.name}")
+                            notifManager.sendNotificationAndHide(
+                                "Installed $formattedDepsToInstall",
+                                "Installed $formattedDepsToInstall for ${component.name}.",
+                            )
+                        } else {
+                            log.warn("Failed to install dependencies: $formattedDepsToInstall")
+                            notifManager.sendNotification(
+                                "Failed to install dependencies",
+                                "Failed to install dependencies: $formattedDepsToInstall. Please install them manually.",
+                                NotificationType.ERROR
+                            )
+                        }
                     }
                     notif.expire()
                 }
@@ -297,7 +308,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
     }
 
-    open fun removeComponent(componentName: String) {
+    fun removeComponent(componentName: String) {
         val remoteComponent = fetchComponent(componentName)
         val componentsDir =
             "${resolveAlias(getLocalPathForComponents())}/${remoteComponent.type.substringAfterLast(":")}"
@@ -333,11 +344,21 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     NotificationAction.createSimple("Remove") {
                         runAsync {
                             DependencyManager.getInstance(project).uninstallDependencies(uselessDependencies)
-                        }.then {
-                            notifManager.sendNotificationAndHide(
-                                "Removed dependenc${if (multipleDependencies) "ies" else "y"}",
-                                "Removed ${uselessDependencies.joinToString(", ") { it }}."
-                            )
+                        }.then { uninstallSuccess ->
+                            if (uninstallSuccess) {
+                                log.info("Removed ${uselessDependencies.joinToString(", ")}")
+                                notifManager.sendNotificationAndHide(
+                                    "Removed dependenc${if (multipleDependencies) "ies" else "y"}",
+                                    "Removed ${uselessDependencies.joinToString(", ")}."
+                                )
+                            } else {
+                                log.warn("Failed to uninstall dependencies: ${uselessDependencies.joinToString(", ")}")
+                                notifManager.sendNotification(
+                                    "Failed to uninstall dependencies",
+                                    "Failed to uninstall dependencies: ${uselessDependencies.joinToString(", ")}}. Please uninstall them manually.",
+                                    NotificationType.ERROR
+                                )
+                            }
                         }
                         notif.expire()
                     }

@@ -1,7 +1,5 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
-import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
@@ -29,7 +27,7 @@ class DependencyManager(private val project: Project) {
         YARN("yarn"),
         BUN("bun");
 
-        fun getLockFileName() = when (this) {
+        fun getLockFilesNames() = when (this) {
             NPM -> listOf("package-lock.json")
             PNPM -> listOf("pnpm-lock.yaml")
             YARN -> listOf("yarn.lock")
@@ -45,50 +43,45 @@ class DependencyManager(private val project: Project) {
     private fun getPackageManager(): PackageManager? {
         val fileManager = FileManager.getInstance(project)
         return enumValues<PackageManager>().firstOrNull { packageManager ->
-            packageManager.getLockFileName().any { lockFile ->
+            packageManager.getLockFilesNames().any { lockFile ->
                 fileManager.getVirtualFilesByName(lockFile).isNotEmpty()
             }
         }
     }
 
-    fun installDependencies(dependencyNames: List<String>, installationType: InstallationType = InstallationType.PROD) {
-        getPackageManager()?.let { packageManager ->
-            // install the dependency
-            val command = listOfNotNull(
-                packageManager.command,
-                packageManager.getInstallCommand(),
-                if (installationType == InstallationType.DEV) "-D" else null,
-                *dependencyNames.toTypedArray()
-            ).toTypedArray()
-            // check if the installation was successful
-            if (ShellRunner.getInstance(project).execute(command) == null) {
-                NotificationManager(project).sendNotification(
-                    "Failed to install dependencies",
-                    "Failed to install dependencies: ${dependencyNames.joinToString { ", " }} (${command.joinToString(" ")}). Please install it manually.",
-                    NotificationType.ERROR
-                )
+    fun installDependencies(
+        dependenciesNames: List<String>,
+        installationType: InstallationType = InstallationType.PROD
+    ) = getPackageManager()?.let { packageManager ->
+        // install the dependencies
+        val command = listOfNotNull(
+            packageManager.command,
+            packageManager.getInstallCommand(),
+            if (installationType == InstallationType.DEV) "-D" else null,
+            *dependenciesNames.toTypedArray()
+        ).toTypedArray()
+        // check if the installation was successful
+        (ShellRunner.getInstance(project).execute(command) != null).also { success ->
+            if (!success) {
+                log.warn("Failed to install dependencies (${command.joinToString(" ")}).")
             }
-        } ?: throw IllegalStateException("No package manager found")
-    }
+        }
+    } ?: throw IllegalStateException("No package manager found")
 
-    fun uninstallDependencies(dependencyNames: List<String>) {
-        getPackageManager()?.let { packageManager ->
-            // uninstall the dependencies
-            val command = listOf(
-                packageManager.command,
-                "remove",
-                *dependencyNames.toTypedArray()
-            ).toTypedArray()
-            // check if the uninstallation was successful
-            if (ShellRunner.getInstance(project).execute(command) == null) {
-                NotificationManager(project).sendNotification(
-                    "Failed to uninstall dependencies",
-                    "Failed to uninstall dependencies (${command.joinToString(" ")}). Please uninstall them manually.",
-                    NotificationType.ERROR
-                )
+    fun uninstallDependencies(dependenciesNames: List<String>) = getPackageManager()?.let { packageManager ->
+        // uninstall the dependencies
+        val command = listOf(
+            packageManager.command,
+            "remove",
+            *dependenciesNames.toTypedArray()
+        ).toTypedArray()
+        // check if the uninstallation was successful
+        (ShellRunner.getInstance(project).execute(command) != null).also { success ->
+            if (!success) {
+                log.warn("Failed to uninstall dependencies (${command.joinToString(" ")}).")
             }
-        } ?: throw IllegalStateException("No package manager found")
-    }
+        }
+    } ?: throw IllegalStateException("No package manager found")
 
     fun getInstalledDependencies(): List<String> {
         // Read the package.json file

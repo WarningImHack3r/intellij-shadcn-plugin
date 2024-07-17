@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Add a notification when component dependencies fail to install or uninstall
+
 ## [0.8.5] - 2024-06-22
 
 ### Fixed
