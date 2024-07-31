@@ -1,4 +1,4 @@
-package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
+package com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement
 
 import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns

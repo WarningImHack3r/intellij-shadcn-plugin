@@ -5,9 +5,11 @@ changelog = "2.2.1"
 gradleIntelliJPlugin = "1.17.4"
 qodana = "2024.1.5"
 kover = "0.8.2"
+swc4j = "0.10.0"
 
 [libraries]
 serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+swc4j = { group = "com.caoccao.javet", name = "swc4j", version.ref = "swc4j" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }

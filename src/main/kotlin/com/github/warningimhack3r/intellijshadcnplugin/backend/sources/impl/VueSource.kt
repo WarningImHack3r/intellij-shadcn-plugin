@@ -5,8 +5,8 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.http.RequestSende
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.VueConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement.ImportsPackagesReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement.VueClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
