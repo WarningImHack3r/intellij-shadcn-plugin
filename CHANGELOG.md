@@ -12,9 +12,16 @@
 
 ## [Unreleased]
 
+## [0.9.0] - 2024-08-01
+
 ### Added
 
 - Add a notification when component dependencies fail to install or uninstall
+- Add a dependency to the Webpack extension due to the newer Vue extension (#55)
+
+### Removed
+
+- Drop support for 2021.3, 2022.1 and 2022.2 IDEs (#55)
 
 ## [0.8.5] - 2024-06-22
 
@@ -131,7 +138,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.2...v0.8.3
@@ -143,6 +151,6 @@
 [0.7.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.2...v0.7.3
-[0.7.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.1...v0.7.2
-[0.7.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.0...v0.7.1
+[0.7.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.1...v0.7.2
+[0.7.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/commits/v0.7.0
