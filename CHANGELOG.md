@@ -15,6 +15,11 @@
 ### Added
 
 - Add a notification when component dependencies fail to install or uninstall
+- Add a dependency to the Webpack extension due to the newer Vue extension (#55)
+
+### Removed
+
+- Drop support for 2021.3, 2022.1 and 2022.2 IDEs (#55)
 
 ## [0.8.5] - 2024-06-22
 

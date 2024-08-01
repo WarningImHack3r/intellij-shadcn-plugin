@@ -1,17 +1,22 @@
 [versions]
-kotlin = "1.9.24"
-serialization = "1.6.3"
+# libraries
+junit = "4.13.2"
+
+# plugins
 changelog = "2.2.1"
-gradleIntelliJPlugin = "1.17.4"
+intellijPlatform = "2.0.0"
+kotlin = "2.0.0"
+serialization = "1.7.1"
+kover = "0.8.3"
 qodana = "2024.1.5"
-kover = "0.8.2"
 
 [libraries]
+junit = { group = "junit", name = "junit", version.ref = "junit" }
 serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
-gradleIntelliJPlugin = { id = "org.jetbrains.intellij", version.ref = "gradleIntelliJPlugin" }
+intellijPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intellijPlatform" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 serialization = { id = "plugin.serialization", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }

@@ -1,6 +1,8 @@
 .gradle/
+.kotlin/
 .idea/*
 !.idea/icon.svg
+.intelliJPlatform/
 .qodana
 build/
 .DS_Store
