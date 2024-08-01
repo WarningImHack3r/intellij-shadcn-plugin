@@ -20,6 +20,6 @@ swc4j = { group = "com.caoccao.javet", name = "swc4j", version.ref = "swc4j" }
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
 intellijPlatform = { id = "org.jetbrains.intellij.platform", version.ref = "intellijPlatform" }
 kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-serialization = { id = "plugin.serialization", version.ref = "kotlin" }
 kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
 qodana = { id = "org.jetbrains.qodana", version.ref = "qodana" }
+serialization = { id = "plugin.serialization", version.ref = "kotlin" }
