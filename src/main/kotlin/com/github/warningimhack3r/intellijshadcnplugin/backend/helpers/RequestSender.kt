@@ -1,4 +1,4 @@
-package com.github.warningimhack3r.intellijshadcnplugin.backend.http
+package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.util.applyIf

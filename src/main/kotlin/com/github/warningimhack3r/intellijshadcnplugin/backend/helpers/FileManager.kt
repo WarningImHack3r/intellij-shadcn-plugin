@@ -40,7 +40,7 @@ class FileManager(private val project: Project) {
     fun deleteFile(file: VirtualFile): Boolean {
         return try {
             runWriteAction { file.delete(this) }.let { true }
-        } catch (e: IOException) {
+        } catch (_: IOException) {
             false
         }.also {
             if (!it) log.warn("Unable to delete file at path ${file.path}")
@@ -113,7 +113,7 @@ class FileManager(private val project: Project) {
         return try {
             val deepest = getDeepestFileForPath(filePath)
             if (deepest.name == filePath.substringAfterLast('/')) deepest else null
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             null
         }.also {
             if (it == null) log.warn("No file found at path $filePath")

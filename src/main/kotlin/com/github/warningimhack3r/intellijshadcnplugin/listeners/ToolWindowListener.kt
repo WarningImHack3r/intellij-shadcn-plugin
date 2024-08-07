@@ -16,7 +16,7 @@ class ToolWindowListener(private val project: Project) : ToolWindowManagerListen
 
     override fun stateChanged(toolWindowManager: ToolWindowManager) {
         val previousState = isToolWindowOpen
-        isToolWindowOpen = toolWindowManager.getToolWindow(TOOL_WINDOW_ID)?.isVisible ?: false
+        isToolWindowOpen = toolWindowManager.getToolWindow(TOOL_WINDOW_ID)?.isVisible == true
         if (previousState == false && isToolWindowOpen == true) {
             log.info("Tool window was closed and is now open, updating contents")
             toolWindowManager.getToolWindow(TOOL_WINDOW_ID)?.contentManager?.getContent(0)?.let {
