@@ -3,7 +3,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SolidUIConfig
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction

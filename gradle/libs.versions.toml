@@ -9,10 +9,12 @@ kotlin = "2.0.0"
 kover = "0.8.3"
 qodana = "2024.1.5"
 serialization = "1.7.1"
+swc4j = "0.10.0"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "serialization" }
+swc4j = { group = "com.caoccao.javet", name = "swc4j", version.ref = "swc4j" }
 
 [plugins]
 changelog = { id = "org.jetbrains.changelog", version.ref = "changelog" }
