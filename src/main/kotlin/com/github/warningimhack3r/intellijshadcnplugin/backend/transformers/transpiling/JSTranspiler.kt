@@ -6,7 +6,7 @@ import com.caoccao.javet.swc4j.enums.Swc4jSourceMapOption
 import com.caoccao.javet.swc4j.options.Swc4jTranspileOptions
 import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.transpiling.transpilers.JSXTranspiler
 import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.transpiling.transpilers.VueTranspiler
-import java.net.URL
+import java.nio.file.Paths
 
 object JSTranspiler {
 
@@ -39,7 +39,7 @@ object JSTranspiler {
 
     fun transpileToJs(from: Swc4jMediaType, to: Transpiler, code: String): String {
         val options = Swc4jTranspileOptions()
-            .setSpecifier(URL("file:///index.${extensionFromMedia(from)}"))
+            .setSpecifier(Paths.get("index.${extensionFromMedia(from)}").toUri().toURL())
             .setMediaType(from)
             .setKeepComments(true)
             .setSourceMap(Swc4jSourceMapOption.None)
