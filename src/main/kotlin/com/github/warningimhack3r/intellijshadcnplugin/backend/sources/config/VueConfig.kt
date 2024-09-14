@@ -4,7 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
- * A shadcn-svelte locally installed components.json file.
+ * A shadcn locally installed components.json file.
  * @param `$schema` The schema URL for the file.
  * @param style The library style installed.
  * @param typescript Whether to use TypeScript over JavaScript.

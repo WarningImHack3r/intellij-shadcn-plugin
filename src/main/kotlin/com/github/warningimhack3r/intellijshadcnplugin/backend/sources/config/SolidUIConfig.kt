@@ -3,7 +3,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config
 import kotlinx.serialization.Serializable
 
 /**
- * A shadcn-svelte locally installed components.json file.
+ * A shadcn locally installed components.json file.
  * @param `$schema` The schema URL for the file.
  * @param tsx Whether to use TypeScript over JavaScript.
  * @param componentDir The components' directory.

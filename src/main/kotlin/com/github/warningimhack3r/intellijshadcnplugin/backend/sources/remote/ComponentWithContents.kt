@@ -3,7 +3,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote
 import kotlinx.serialization.Serializable
 
 /**
- * A shadcn-svelte component in the registry.
+ * A shadcn component in the registry.
  * @param name The name of the component.
  * @param dependencies The npm dependencies of the component.
  * @param registryDependencies The other components that this component depends on.
