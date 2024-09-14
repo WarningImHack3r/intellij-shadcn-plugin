@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.9.1] - 2024-09-14
+
 ### Fixed
 
 - Fix a crash when not using TypeScript in a Svelte project (#62)
@@ -142,7 +144,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.3...v0.8.4
