@@ -36,25 +36,27 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
             log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
             return alias
         }
-        val usesKit = DependencyManager.getInstance(project).isDependencyInstalled("@sveltejs/kit")
-        val tsConfigName = if (getLocalConfig().typescript) "tsconfig.json" else "jsconfig.json"
-        val configFile = if (usesKit) ".svelte-kit/$tsConfigName" else tsConfigName
         val fileManager = FileManager.getInstance(project)
-        var tsConfig = fileManager.getFileContentsAtPath(configFile)
+        val usesKit = DependencyManager.getInstance(project).isDependencyInstalled("@sveltejs/kit")
+        val configFileName = if (usesKit) {
+            ".svelte-kit/tsconfig.json"
+        } else if (getLocalConfig().typescript) "tsconfig.json" else "jsconfig.json"
+        var tsConfig = fileManager.getFileContentsAtPath(configFileName)
         if (tsConfig == null) {
-            if (!usesKit) throw NoSuchFileException("Cannot get $configFile")
+            if (!usesKit) throw NoSuchFileException("Cannot get $configFileName")
             val res = ShellRunner.getInstance(project).execute(arrayOf("npx", "svelte-kit", "sync"))
             if (res == null) {
                 NotificationManager(project).sendNotification(
-                    "Failed to generate $configFile",
+                    "Failed to generate $configFileName",
                     "Please run <code>npx svelte-kit sync</code> in your project directory to generate the file and try again.",
                     NotificationType.ERROR
                 )
-                throw NoSuchFileException("Cannot get or generate $configFile")
+                throw NoSuchFileException("Cannot get or generate $configFileName")
             }
-            Thread.sleep(250) // wait for the sync to create the files
+            Thread.sleep(500) // wait for the sync to create the files
             tsConfig =
-                fileManager.getFileContentsAtPath(configFile) ?: throw NoSuchFileException("Cannot get $configFile")
+                fileManager.getFileContentsAtPath(configFileName)
+                    ?: throw NoSuchFileException("Cannot get $configFileName after sync")
         }
         val aliasPath = parseTsConfig(tsConfig)
             .jsonObject["compilerOptions"]

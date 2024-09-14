@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix a crash when not using TypeScript in a Svelte project (#62)
+
 ## [0.9.0] - 2024-08-01
 
 ### Added
