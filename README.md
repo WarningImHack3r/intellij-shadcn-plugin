@@ -28,8 +28,13 @@ otherwise.**
 - Supports _all_ shadcn/ui implementations: Svelte, React, Vue, and Solid
 - Browse available components
 - Easily search for remote or existing components
-- (Soon) support monorepos
 - ...and more!
+
+## Planned Features
+
+- Support monorepos with multiple `components.json` files
+- Allow initializing a shadcn/ui implementation within an existing project
+- Add/improve support for the horizontal tool window layout
 
 ## Usage
 
