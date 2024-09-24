@@ -23,12 +23,14 @@ class DependencyManager(private val project: Project) {
 
     enum class PackageManager(val command: String) {
         NPM("npm"),
+        DENO("deno"),
         PNPM("pnpm"),
         YARN("yarn"),
         BUN("bun");
 
         fun getLockFilesNames() = when (this) {
             NPM -> listOf("package-lock.json")
+            DENO -> listOf("deno.lock")
             PNPM -> listOf("pnpm-lock.yaml")
             YARN -> listOf("yarn.lock")
             BUN -> listOf("bun.lockb", "bun.lock")
@@ -58,7 +60,11 @@ class DependencyManager(private val project: Project) {
             packageManager.command,
             packageManager.getInstallCommand(),
             if (installationType == InstallationType.DEV) "-D" else null,
-            *dependenciesNames.toTypedArray()
+            *dependenciesNames.let { deps ->
+                if (packageManager in listOf(PackageManager.DENO)) {
+                    deps.map { "npm:$it" }
+                } else deps
+            }.toTypedArray()
         ).toTypedArray()
         // check if the installation was successful
         (ShellRunner.getInstance(project).execute(command) != null).also { success ->

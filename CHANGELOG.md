@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Add support for Deno 2 for installing dependencies
+
 ## [0.9.1] - 2024-09-14
 
 ### Fixed
