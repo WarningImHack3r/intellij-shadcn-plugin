@@ -1,14 +1,14 @@
 [versions]
 # libraries
 junit = "4.13.2"
+serialization = "1.7.3"
 
 # plugins
 changelog = "2.2.1"
-intellijPlatform = "2.0.1"
+intellijPlatform = "2.1.0"
 kotlin = "2.0.20"
 kover = "0.8.3"
 qodana = "2024.2.3"
-serialization = "1.7.3"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
