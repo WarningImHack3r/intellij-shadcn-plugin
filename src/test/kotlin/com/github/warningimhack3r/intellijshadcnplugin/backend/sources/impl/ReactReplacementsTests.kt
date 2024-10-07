@@ -22,7 +22,9 @@ class ReactReplacementsTests : ReplacementsTests() {
             aliases = ReactConfig.Aliases(
                 components = "@/components",
                 utils = "@/lib/utilsReplaced",
-                ui = if (useNotNullUI) "@/ui" else null
+                ui = if (useNotNullUI) "@/ui" else null,
+                lib = null,
+                hooks = null
             )
         )
 
