@@ -12,6 +12,16 @@
 
 ## [Unreleased]
 
+## [0.9.3] - 2024-10-23
+
+### Changed
+
+- No longer try to remove `/* */` comments from the `tsconfig.json`/`jsconfig.json` files as they can break parsing (#66)
+
+### Fixed
+
+- [Vue] Fix parsing of `tsconfig.app.json` files (#66)
+
 ## [0.9.2] - 2024-09-24
 
 ### Added
@@ -150,7 +160,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.2...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.3...HEAD
+[0.9.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.8.5...v0.9.0
