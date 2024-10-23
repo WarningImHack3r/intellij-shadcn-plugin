@@ -55,7 +55,10 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
         val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(tsConfigLocation)
             ?: throw NoSuchFileException("$tsConfigLocation not found")
         val aliasPath = (resolvePath(tsConfig, tsConfigLocation) ?: if (config.typescript) {
-            resolvePath("tsconfig.app.json", "tsconfig.app.json")
+            val tsConfigAppLocation = "tsconfig.app.json"
+            val tsConfigApp = FileManager.getInstance(project).getFileContentsAtPath(tsConfigAppLocation)
+                ?: throw NoSuchFileException("$tsConfigAppLocation not found")
+            resolvePath(tsConfigApp, tsConfigAppLocation)
         } else null) ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/")).also {

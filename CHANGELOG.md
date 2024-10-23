@@ -12,6 +12,14 @@
 
 ## [Unreleased]
 
+### Changed
+
+- No longer try to remove `/* */` comments from the `tsconfig.json`/`jsconfig.json` files as they can break parsing (#66)
+
+### Fixed
+
+- [Vue] Fix parsing of `tsconfig.app.json` files (#66)
+
 ## [0.9.2] - 2024-09-24
 
 ### Added

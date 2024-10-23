@@ -108,8 +108,6 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     protected fun parseTsConfig(config: String, fileName: String = "tsconfig.json"): JsonElement {
         // Temporary workaround until kotlinx.serialization is upgraded
         val cleanConfig = config
-            // Remove /* */ comments
-            .replace(Regex("/\\*.*?\\*/", RegexOption.DOT_MATCHES_ALL), "")
             .split("\n").joinToString("\n") { line ->
                 // Remove // comments
                 line.substringBefore("//").trim()
