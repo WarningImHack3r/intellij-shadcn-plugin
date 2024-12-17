@@ -111,6 +111,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             .split("\n").joinToString("\n") { line ->
                 // Remove // comments
                 line.substringBefore("//").trim()
+                // Remove /* */ comments
+                line.replace(Regex("/\\*.*?\\*/"), "").trim()
             }
             // Remove trailing commas
             .replace(Regex(",\\s*}"), "\n}")

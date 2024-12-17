@@ -22,8 +22,11 @@ class ReactReplacementsTests : ReplacementsTests() {
             aliases = ReactConfig.Aliases(
                 components = "@/components",
                 utils = "@/lib/utilsReplaced",
-                ui = if (useNotNullUI) "@/ui" else null
-            )
+                ui = if (useNotNullUI) "@/ui" else null,
+                lib = "@/lib",
+                hooks = "@/hooks"
+            ),
+            iconLibrary = "lucide"
         )
 
         public override fun adaptFileToConfig(file: PsiFile) {
