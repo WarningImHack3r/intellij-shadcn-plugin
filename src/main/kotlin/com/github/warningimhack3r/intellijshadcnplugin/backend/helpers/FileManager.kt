@@ -83,7 +83,9 @@ class FileManager(private val project: Project) {
                 )
             }
         }).filter { file ->
-            !file.path.contains("/node_modules/") && !file.path.contains("/.git/")
+            !file.path.contains("/node_modules/")
+                    && !file.path.contains("/.git/")
+                    && !file.parent.name.startsWith('.')
         }.sortedBy { file ->
             name.toRegex().find(file.path)?.range?.first ?: Int.MAX_VALUE
         }.also {
