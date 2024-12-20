@@ -19,7 +19,8 @@ class ReactConfig(
     val rsc: Boolean = false,
     val tsx: Boolean = true,
     override val tailwind: Tailwind,
-    override val aliases: Aliases
+    override val aliases: Aliases,
+    val iconLibrary: String? = null
 ) : Config() {
 
     /**
@@ -49,6 +50,8 @@ class ReactConfig(
     class Aliases(
         val components: String,
         val utils: String,
-        val ui: String? = null
+        val ui: String? = null,
+        val lib: String? = null,
+        val hooks: String? = null
     ) : Config.Aliases()
 }
