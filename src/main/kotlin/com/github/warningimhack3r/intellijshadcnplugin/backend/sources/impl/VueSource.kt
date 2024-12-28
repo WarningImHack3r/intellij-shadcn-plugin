@@ -144,7 +144,8 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
     override fun fetchColors(): JsonElement {
         val baseColor = getLocalConfig().tailwind.baseColor
         return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
-            Json.parseToJsonElement(it.body)
+            val json = Json { ignoreUnknownKeys = true }
+            json.parseToJsonElement(it.body)
         } ?: throw Exception("Colors not found")
     }
 

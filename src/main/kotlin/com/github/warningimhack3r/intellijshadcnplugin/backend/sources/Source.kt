@@ -26,6 +26,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         private val tsConfigJson = Json {
             // Lax parsing (unquoted keys, formatting, etc.)
             isLenient = true
+            // Ignore unknown keys
+            ignoreUnknownKeys = true
             // Allow trailing commas (1.6.1+)
 //            allowTrailingComma = true
             // Allow comments (1.7.0+)
@@ -73,7 +75,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         } ?: FileManager.getInstance(project).getFileContentsAtPath(configFile)?.let {
             log.debug("Parsing config from $configFile")
             try {
-                Json.decodeFromString(serializer, it).also {
+                val json = Json { ignoreUnknownKeys = true }
+                json.decodeFromString(serializer, it).also {
                     log.debug("Parsed config")
                 }
             } catch (e: Exception) {
@@ -152,7 +155,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     // Public methods
     fun fetchAllComponents(): List<Component> {
         return RequestSender.sendRequest("$domain/registry/index.json").ok {
-            Json.decodeFromString<List<Component>>(it.body)
+            val json = Json { ignoreUnknownKeys = true }
+            json.decodeFromString<List<Component>>(it.body)
         }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
         } ?: emptyList<Component>().also {

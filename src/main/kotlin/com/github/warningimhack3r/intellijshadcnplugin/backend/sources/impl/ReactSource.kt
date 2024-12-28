@@ -137,7 +137,8 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
     override fun fetchColors(): JsonElement {
         val baseColor = getLocalConfig().tailwind.baseColor
         return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
-            Json.parseToJsonElement(it.body)
+            val json = Json { ignoreUnknownKeys = true }
+            json.parseToJsonElement(it.body)
         } ?: throw Exception("Colors not found")
     }
 }

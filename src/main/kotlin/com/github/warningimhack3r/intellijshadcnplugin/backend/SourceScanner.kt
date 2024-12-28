@@ -15,7 +15,8 @@ object SourceScanner {
     fun findShadcnImplementation(project: Project): Source<*>? {
         val fileManager = FileManager.getInstance(project)
         return fileManager.getFileContentsAtPath("components.json")?.let { componentsJson ->
-            val contents = Json.parseToJsonElement(componentsJson).jsonObject
+            val json = Json { ignoreUnknownKeys = true }
+            val contents = json.parseToJsonElement(componentsJson).jsonObject
             val schema = contents["\$schema"]?.jsonPrimitive?.content ?: ""
             when {
                 schema.contains("shadcn-svelte.com") -> SvelteSource(project)

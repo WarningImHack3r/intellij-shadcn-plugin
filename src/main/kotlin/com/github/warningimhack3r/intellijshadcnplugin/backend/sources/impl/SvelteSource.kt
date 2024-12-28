@@ -75,7 +75,10 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
             super.fetchComponent(componentName)
         } else {
             RequestSender.sendRequest("$domain/registry/styles/${config.style}-js/$componentName.json")
-                .ok { Json.decodeFromString(it.body) } ?: throw Exception("Component $componentName not found")
+                .ok {
+                    val json = Json { ignoreUnknownKeys = true }
+                    json.decodeFromString(it.body)
+                } ?: throw Exception("Component $componentName not found")
         }
     }
 
@@ -102,7 +105,8 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
     override fun fetchColors(): JsonElement {
         val baseColor = getLocalConfig().tailwind.baseColor
         return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
-            Json.parseToJsonElement(it.body)
+            val json = Json { ignoreUnknownKeys = true }
+            json.parseToJsonElement(it.body)
         } ?: throw Exception("Colors not found")
     }
 }
