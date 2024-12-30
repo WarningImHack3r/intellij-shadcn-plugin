@@ -105,8 +105,7 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
     override fun fetchColors(): JsonElement {
         val baseColor = getLocalConfig().tailwind.baseColor
         return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
-            val json = Json { ignoreUnknownKeys = true }
-            json.parseToJsonElement(it.body)
+            Json.parseToJsonElement(it.body)
         } ?: throw Exception("Colors not found")
     }
 }

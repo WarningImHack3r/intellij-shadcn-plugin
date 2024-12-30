@@ -92,8 +92,7 @@ class DependencyManager(private val project: Project) {
     fun getInstalledDependencies(): List<String> {
         // Read the package.json file
         return FileManager.getInstance(project).getFileContentsAtPath("package.json")?.let { packageJson ->
-            val json = Json { ignoreUnknownKeys = true }
-            json.parseToJsonElement(packageJson).jsonObject.filter {
+            Json.parseToJsonElement(packageJson).jsonObject.filter {
                 it.key == "dependencies" || it.key == "devDependencies"
             }.map { it.value.jsonObject.keys }.flatten().also {
                 log.debug("Installed dependencies: $it")

@@ -107,8 +107,7 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
         val baseColor = config.tailwind?.baseColor ?: config.uno?.baseColor
         ?: throw Exception("Base color not found. Is your config valid?")
         return RequestSender.sendRequest("$domain/registry/colors/${cssFrameworkName()}/$baseColor.json").ok {
-            val json = Json { ignoreUnknownKeys = true }
-            json.parseToJsonElement(it.body)
+            Json.parseToJsonElement(it.body)
         } ?: throw Exception("Colors not found")
     }
 }

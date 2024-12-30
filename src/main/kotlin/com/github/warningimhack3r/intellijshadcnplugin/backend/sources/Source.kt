@@ -138,7 +138,10 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     protected open fun fetchComponent(componentName: String): ComponentWithContents {
         return RequestSender.sendRequest("$domain/${getURLPathForComponent(componentName)}")
-            .ok { Json.decodeFromString(it.body) } ?: throw Exception("Component $componentName not found")
+            .ok {
+                val json = Json { ignoreUnknownKeys = true }
+                json.decodeFromString(it.body)
+            } ?: throw Exception("Component $componentName not found")
     }
 
     protected open fun fetchColors(): JsonElement {
