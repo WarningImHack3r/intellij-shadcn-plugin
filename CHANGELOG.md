@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.9.4] - 2025-01-01
+
 ### Changed
 
 - [React] Update config to support new values (#71)
@@ -167,7 +169,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.0...v0.9.1
