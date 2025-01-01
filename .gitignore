@@ -2,7 +2,7 @@
 .kotlin/
 .idea/*
 !.idea/icon.svg
-.intelliJPlatform/
+.intellijPlatform/
 .qodana
 build/
 .DS_Store

@@ -73,7 +73,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         } ?: FileManager.getInstance(project).getFileContentsAtPath(configFile)?.let {
             log.debug("Parsing config from $configFile")
             try {
-                Json.decodeFromString(serializer, it).also {
+                val json = Json { ignoreUnknownKeys = true }
+                json.decodeFromString(serializer, it).also {
                     log.debug("Parsed config")
                 }
             } catch (e: Exception) {
@@ -135,7 +136,10 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     protected open fun fetchComponent(componentName: String): ComponentWithContents {
         return RequestSender.sendRequest("$domain/${getURLPathForComponent(componentName)}")
-            .ok { Json.decodeFromString(it.body) } ?: throw Exception("Component $componentName not found")
+            .ok {
+                val json = Json { ignoreUnknownKeys = true }
+                json.decodeFromString(it.body)
+            } ?: throw Exception("Component $componentName not found")
     }
 
     protected open fun fetchColors(): JsonElement {
@@ -152,7 +156,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     // Public methods
     fun fetchAllComponents(): List<Component> {
         return RequestSender.sendRequest("$domain/registry/index.json").ok {
-            Json.decodeFromString<List<Component>>(it.body)
+            val json = Json { ignoreUnknownKeys = true }
+            json.decodeFromString<List<Component>>(it.body)
         }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
         } ?: emptyList<Component>().also {

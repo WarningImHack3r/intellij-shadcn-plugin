@@ -75,7 +75,10 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
             super.fetchComponent(componentName)
         } else {
             RequestSender.sendRequest("$domain/registry/styles/${config.style}-js/$componentName.json")
-                .ok { Json.decodeFromString(it.body) } ?: throw Exception("Component $componentName not found")
+                .ok {
+                    val json = Json { ignoreUnknownKeys = true }
+                    json.decodeFromString(it.body)
+                } ?: throw Exception("Component $componentName not found")
         }
     }
 
