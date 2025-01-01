@@ -45,6 +45,8 @@ class ReactConfig(
      * @param components The alias for the components' directory.
      * @param utils The alias for the utils directory.
      * @param ui The alias for UI components.
+     * @param lib The alias for the library components.
+     * @param hooks The alias for the hooks directory.
      */
     @Serializable
     class Aliases(

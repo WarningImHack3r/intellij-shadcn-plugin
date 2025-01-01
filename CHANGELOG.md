@@ -12,6 +12,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+- [React] Update config to support new values (#71)
+- Don't fail anymore when parsing a `components.json`/`ui.config.json` that has unknown additional keys (#72)
+  - This prevents the plugin from failing to work with newer shadcn upgrades that the plugin doesn't support yet
+  - Some new features may not yet be implemented though, new features still require a plugin upgrade but won't prevent the plugin from working as before
+
 ## [0.9.3] - 2024-10-23
 
 ### Changed
