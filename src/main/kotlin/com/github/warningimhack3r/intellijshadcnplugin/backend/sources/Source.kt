@@ -26,8 +26,6 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         private val tsConfigJson = Json {
             // Lax parsing (unquoted keys, formatting, etc.)
             isLenient = true
-            // Ignore unknown keys
-            ignoreUnknownKeys = true
             // Allow trailing commas (1.6.1+)
 //            allowTrailingComma = true
             // Allow comments (1.7.0+)
