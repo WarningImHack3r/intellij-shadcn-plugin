@@ -25,7 +25,7 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
     override var framework = "Vue"
 
     override fun getURLPathForComponent(componentName: String) =
-        "registry/styles/${getLocalConfig().style}/$componentName.json"
+        "r/styles/${getLocalConfig().style}/$componentName.json"
 
     override fun getLocalPathForComponents() = getLocalConfig().aliases.components
 
@@ -143,14 +143,15 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
 
     override fun fetchColors(): JsonElement {
         val baseColor = getLocalConfig().tailwind.baseColor
-        return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
+        return RequestSender.sendRequest("$domain/r/colors/$baseColor.json").ok {
             Json.parseToJsonElement(it.body)
         } ?: throw Exception("Colors not found")
     }
 
     override fun getRegistryDependencies(component: ComponentWithContents): List<ComponentWithContents> {
-        return super.getRegistryDependencies(component.copy(
-            registryDependencies = component.registryDependencies.filterNot { it == "utils" }
-        ))
+        return super.getRegistryDependencies(
+            component.copy(
+                registryDependencies = component.registryDependencies.filterNot { it == "utils" }
+            ))
     }
 }
