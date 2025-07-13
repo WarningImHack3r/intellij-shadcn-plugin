@@ -33,7 +33,7 @@ object RequestSender {
         log.debug(
             "Request method: ${request.method()}, headers: ${
                 request.headers().map()
-            }, body:${
+            }, body: ${
                 if (body != null) {
                     "\n"
                 } else ""
