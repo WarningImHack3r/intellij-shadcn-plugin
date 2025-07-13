@@ -32,6 +32,9 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             // Allow comments (1.7.0+)
 //            allowComments = true
         }
+        val decodingJson = Json {
+            ignoreUnknownKeys = true
+        }
     }
 
     private val log = logger<Source<C>>()
@@ -74,8 +77,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         } ?: FileManager.getInstance(project).getFileContentsAtPath(configFile)?.let {
             log.debug("Parsing config from $configFile")
             try {
-                val json = Json { ignoreUnknownKeys = true }
-                json.decodeFromString(serializer, it).also {
+                decodingJson.decodeFromString(serializer, it).also {
                     log.debug("Parsed config")
                 }
             } catch (e: Exception) {
@@ -138,8 +140,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     protected open fun fetchComponent(componentName: String): ComponentWithContents {
         return RequestSender.sendRequest("$domain/${getURLPathForComponent(componentName)}")
             .ok {
-                val json = Json { ignoreUnknownKeys = true }
-                json.decodeFromString(ComponentWithContents.serializer(), it.body)
+                decodingJson.decodeFromString(ComponentWithContents.serializer(), it.body)
             } ?: throw Exception("Component $componentName not found")
     }
 
@@ -157,8 +158,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     // Public methods
     fun fetchAllComponents(): List<Component> {
         return RequestSender.sendRequest("$domain/r/index.json").ok {
-            val json = Json { ignoreUnknownKeys = true }
-            json.decodeFromString(ListSerializer(Component.serializer()), it.body)
+            decodingJson.decodeFromString(ListSerializer(Component.serializer()), it.body)
         }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
         } ?: emptyList<Component>().also {
