@@ -25,7 +25,7 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
     override var framework = "React"
 
     override fun getURLPathForComponent(componentName: String) =
-        "registry/styles/${getLocalConfig().style}/$componentName.json"
+        "r/styles/${getLocalConfig().style}/$componentName.json"
 
     override fun getLocalPathForComponents() = getLocalConfig().aliases.components
 
@@ -136,7 +136,7 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
 
     override fun fetchColors(): JsonElement {
         val baseColor = getLocalConfig().tailwind.baseColor
-        return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
+        return RequestSender.sendRequest("$domain/r/colors/$baseColor.json").ok {
             Json.parseToJsonElement(it.body)
         } ?: throw Exception("Colors not found")
     }

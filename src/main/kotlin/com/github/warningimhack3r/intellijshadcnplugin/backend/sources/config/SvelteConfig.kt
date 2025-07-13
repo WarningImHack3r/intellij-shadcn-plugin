@@ -14,7 +14,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 class SvelteConfig(
     override val `$schema`: String = "https://shadcn-svelte.com/schema.json",
-    val style: String,
     override val tailwind: Tailwind,
     override val aliases: Aliases,
     val typescript: Boolean = true
@@ -28,7 +27,6 @@ class SvelteConfig(
      */
     @Serializable
     class Tailwind(
-        override val config: String,
         override val css: String,
         val baseColor: String
     ) : Config.Tailwind()

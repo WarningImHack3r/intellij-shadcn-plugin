@@ -33,7 +33,7 @@ class ReactConfig(
      */
     @Serializable
     class Tailwind(
-        override val config: String,
+        val config: String,
         override val css: String,
         val baseColor: String,
         val cssVariables: Boolean = true,

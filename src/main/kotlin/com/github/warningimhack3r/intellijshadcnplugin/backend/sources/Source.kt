@@ -156,7 +156,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     // Public methods
     fun fetchAllComponents(): List<Component> {
-        return RequestSender.sendRequest("$domain/registry/index.json").ok {
+        return RequestSender.sendRequest("$domain/r/index.json").ok {
             val json = Json { ignoreUnknownKeys = true }
             json.decodeFromString(ListSerializer(Component.serializer()), it.body)
         }?.also {

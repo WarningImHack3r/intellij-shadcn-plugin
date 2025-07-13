@@ -29,11 +29,6 @@ sealed class Config {
     @Serializable
     sealed class Tailwind {
         /**
-         * The relative path to the Tailwind config file.
-         */
-        abstract val config: String
-
-        /**
          * The relative path of the Tailwind CSS file.
          */
         abstract val css: String

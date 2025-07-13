@@ -6,7 +6,6 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSe
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.ShellRunner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfig
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
@@ -20,12 +19,13 @@ import java.nio.file.NoSuchFileException
 open class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfig.serializer()) {
     companion object {
         private val log = logger<SvelteSource>()
+        private var isJsUnsupportedNotified = false
     }
 
     override var framework = "Svelte"
 
     override fun getURLPathForComponent(componentName: String) =
-        "registry/styles/${getLocalConfig().style}/$componentName.json"
+        "registry/$componentName.json"
 
     override fun getLocalPathForComponents() = getLocalConfig().aliases.components
 
@@ -69,30 +69,29 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
         }
     }
 
-    override fun fetchComponent(componentName: String): ComponentWithContents {
-        val config = getLocalConfig()
-        return if (config.typescript) {
-            super.fetchComponent(componentName)
-        } else {
-            RequestSender.sendRequest("$domain/registry/styles/${config.style}-js/$componentName.json")
-                .ok {
-                    val json = Json { ignoreUnknownKeys = true }
-                    json.decodeFromString(ComponentWithContents.serializer(), it.body)
-                } ?: throw Exception("Component $componentName not found")
-        }
-    }
-
     override fun adaptFileExtensionToConfig(extension: String): String {
-        return if (!getLocalConfig().typescript) {
+        return if (getLocalConfig().typescript) extension else {
             extension.replace(
                 Regex("\\.ts$"),
                 ".js"
             )
-        } else extension
+        }
     }
 
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
+        if (!config.typescript) {
+            if (!isJsUnsupportedNotified) {
+                NotificationManager(project).sendNotification(
+                    "TypeScript option for Svelte",
+                    "You have TypeScript disabled in your shadcn/ui config. This feature is not supported yet. Please install/update your components with the CLI for now.",
+                    NotificationType.WARNING
+                )
+                isJsUnsupportedNotified = true
+            }
+            // TODO: detype Svelte file
+        }
+
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
         importsPackagesReplacementVisitor.replaceImports { `package` ->

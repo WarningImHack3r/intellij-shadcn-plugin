@@ -27,7 +27,7 @@ class SolidUIConfig(
      */
     @Serializable
     class Tailwind(
-        override val config: String,
+        val config: String,
         override val css: String
     ) : Config.Tailwind()
 
