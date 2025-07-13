@@ -15,6 +15,7 @@ import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import org.jetbrains.concurrency.runAsync
@@ -138,7 +139,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         return RequestSender.sendRequest("$domain/${getURLPathForComponent(componentName)}")
             .ok {
                 val json = Json { ignoreUnknownKeys = true }
-                json.decodeFromString(it.body)
+                json.decodeFromString(ComponentWithContents.serializer(), it.body)
             } ?: throw Exception("Component $componentName not found")
     }
 
@@ -157,7 +158,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     fun fetchAllComponents(): List<Component> {
         return RequestSender.sendRequest("$domain/registry/index.json").ok {
             val json = Json { ignoreUnknownKeys = true }
-            json.decodeFromString<List<Component>>(it.body)
+            json.decodeFromString(ListSerializer(Component.serializer()), it.body)
         }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
         } ?: emptyList<Component>().also {
