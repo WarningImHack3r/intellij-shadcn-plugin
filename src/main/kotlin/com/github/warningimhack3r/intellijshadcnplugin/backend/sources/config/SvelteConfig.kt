@@ -5,7 +5,6 @@ import kotlinx.serialization.Serializable
 /**
  * A shadcn locally installed components.json file.
  * @param `$schema` The schema URL for the file.
- * @param style The library's style used.
  * @param tailwind The Tailwind configuration.
  * @param aliases The aliases for the components and utils directories.
  * @param typescript Whether to use TypeScript over JavaScript.
@@ -14,7 +13,6 @@ import kotlinx.serialization.Serializable
 @Serializable
 class SvelteConfig(
     override val `$schema`: String = "https://shadcn-svelte.com/schema.json",
-    val style: String,
     override val tailwind: Tailwind,
     override val aliases: Aliases,
     val typescript: Boolean = true
@@ -22,13 +20,11 @@ class SvelteConfig(
 
     /**
      * The Tailwind configuration.
-     * @param config The relative path to the Tailwind config file.
      * @param css The relative path of the Tailwind CSS file.
      * @param baseColor The library's base color.
      */
     @Serializable
     class Tailwind(
-        override val config: String,
         override val css: String,
         val baseColor: String
     ) : Config.Tailwind()
@@ -37,10 +33,16 @@ class SvelteConfig(
      * The aliases for the components and utils directories.
      * @param components The alias for the components' directory.
      * @param utils The alias for the utils directory.
+     * @param ui The alias for the ui components directory.
+     * @param hooks The alias for the hooks' directory.
+     * @param lib The alias for the lib directory.
      */
     @Serializable
     class Aliases(
         val components: String,
-        val utils: String
+        val utils: String,
+        val ui: String,
+        val hooks: String,
+        val lib: String
     ) : Config.Aliases()
 }
