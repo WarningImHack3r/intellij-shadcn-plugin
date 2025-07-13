@@ -2,7 +2,6 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonPrimitive
 import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
 import kotlinx.serialization.json.JsonElement
@@ -37,66 +36,10 @@ object ComponentDeserializer : JsonContentPolymorphicSerializer<Component>(Compo
 @Serializable
 sealed class Component {
     abstract val name: String
-    abstract val type: RegistryType
+    abstract val type: String
     abstract val dependencies: List<String>
     abstract val devDependencies: List<String>
     abstract val registryDependencies: List<String>
-
-    /**
-     * Enumerates all possible types of items in the shadcn registry.
-     * Each type is annotated with its corresponding registry identifier.
-     */
-    @Suppress("unused")
-    @Serializable
-    enum class RegistryType {
-        /** Represents a library */
-        @SerialName("registry:lib")
-        LIB,
-
-        /** Represents a building block */
-        @SerialName("registry:block")
-        BLOCK,
-
-        /** Represents a reusable component */
-        @SerialName("registry:component")
-        COMPONENT,
-
-        /** Represents a UI element */
-        @SerialName("registry:ui")
-        UI,
-
-        /** Represents a custom hook */
-        @SerialName("registry:hook")
-        HOOK,
-
-        /** Represents a theme */
-        @SerialName("registry:theme")
-        THEME,
-
-        /** Represents a complete page */
-        @SerialName("registry:page")
-        PAGE,
-
-        /** Represents a simple file */
-        @SerialName("registry:file")
-        FILE,
-
-        /** Represents a style */
-        @SerialName("registry:style")
-        STYLE,
-
-        /** Represents a miscellaneous item */
-        @SerialName("registry:item")
-        ITEM,
-
-        /** Represents an example (specific to shadcn-svelte) */
-        @SerialName("registry:example")
-        EXAMPLE,
-
-        /** Represents an internal component (specific to shadcn-svelte) */
-        @SerialName("registry:internal")
-        INTERNAL
-    }
 }
 
 /**
@@ -107,7 +50,7 @@ sealed class Component {
 @Serializable
 data class StringFileComponent(
     override val name: String,
-    override val type: RegistryType,
+    override val type: String,
     override val dependencies: List<String> = emptyList(),
     override val devDependencies: List<String> = emptyList(),
     override val registryDependencies: List<String> = emptyList(),
@@ -122,7 +65,7 @@ data class StringFileComponent(
 @Serializable
 data class StructFileComponent(
     override val name: String,
-    override val type: RegistryType,
+    override val type: String,
     override val dependencies: List<String> = emptyList(),
     override val devDependencies: List<String> = emptyList(),
     override val registryDependencies: List<String> = emptyList(),
@@ -137,6 +80,6 @@ data class StructFileComponent(
     @Serializable
     data class File(
         val path: String,
-        val type: RegistryType
+        val type: String
     )
 }
