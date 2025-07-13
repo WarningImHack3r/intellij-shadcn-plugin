@@ -44,7 +44,6 @@ class VueConfig(
     /**
      * The framework used.
      */
-    @Suppress("unused")
     @Serializable
     enum class Framework {
         @SerialName("vite")

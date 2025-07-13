@@ -6,6 +6,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Config
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Component
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentDeserializer
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
@@ -158,7 +159,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     // Public methods
     fun fetchAllComponents(): List<Component> {
         return RequestSender.sendRequest("$domain/r/index.json").ok {
-            decodingJson.decodeFromString(ListSerializer(Component.serializer()), it.body)
+            decodingJson.decodeFromString(ListSerializer(ComponentDeserializer), it.body)
         }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
         } ?: emptyList<Component>().also {

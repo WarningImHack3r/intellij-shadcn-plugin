@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * A shadcn locally installed components.json file.
  */
-@Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117", "unused", "PropertyName")
+@Suppress("unused", "PropertyName")
 @Serializable
 sealed class Config {
     /**

@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 @Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117")
 @Serializable
 class SolidUIConfig(
-    override val `$schema`: String = "",
+    override val `$schema`: String = "https://www.solid-ui.com/schema.json",
     val tsx: Boolean,
     val componentDir: String,
     override val tailwind: Tailwind,
