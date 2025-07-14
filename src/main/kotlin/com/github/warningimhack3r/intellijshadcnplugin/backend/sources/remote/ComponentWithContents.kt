@@ -7,6 +7,7 @@ import kotlinx.serialization.Serializable
  *
  * @param name The name of the component.
  * @param dependencies The npm dependencies of the component.
+ * @param devDependencies The npm devDependencies of the component.
  * @param registryDependencies The other components that this component depends on.
  * @param files The files that make up the component.
  * @param type The kind of component.
@@ -15,6 +16,7 @@ import kotlinx.serialization.Serializable
 data class ComponentWithContents(
     val name: String,
     val dependencies: List<String> = emptyList(),
+    val devDependencies: List<String> = emptyList(),
     val registryDependencies: List<String> = emptyList(),
     val files: List<File>,
     val type: String

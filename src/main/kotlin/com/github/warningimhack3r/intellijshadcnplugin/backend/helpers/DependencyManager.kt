@@ -89,23 +89,16 @@ class DependencyManager(private val project: Project) {
         }
     } ?: throw IllegalStateException("No package manager found")
 
-    fun getInstalledDependencies(): List<String> {
-        // Read the package.json file
-        return FileManager.getInstance(project).getFileContentsAtPath("package.json")?.let { packageJson ->
+    fun getInstalledDependencies() =
+        FileManager.getInstance(project).getFileContentsAtPath("package.json")?.let { packageJson ->
             Json.parseToJsonElement(packageJson).jsonObject.filter {
                 it.key == "dependencies" || it.key == "devDependencies"
             }.map { it.value.jsonObject.keys }.flatten().also {
                 log.debug("Installed dependencies: $it")
             }
-        } ?: emptyList<String>().also {
-            log.error("package.json not found")
-        }
-    }
+        } ?: emptyList<String>().also { log.error("package.json not found") }
 
-    fun isDependencyInstalled(dependency: String): Boolean {
-        // Read the package.json file
-        return getInstalledDependencies().contains(dependency).also {
-            logger<DependencyManager>().debug("Is $dependency installed? $it")
-        }
+    fun isDependencyInstalled(dependency: String) = getInstalledDependencies().contains(dependency).also {
+        logger<DependencyManager>().debug("Is $dependency installed? $it")
     }
 }

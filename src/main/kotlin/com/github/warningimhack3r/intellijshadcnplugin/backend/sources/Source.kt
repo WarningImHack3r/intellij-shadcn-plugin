@@ -250,9 +250,18 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         val depsToInstall = component.dependencies.filter { dependency ->
             !depsManager.isDependencyInstalled(dependency)
         }
-        if (depsToInstall.isEmpty()) return
-        log.debug("Installing ${depsToInstall.size} dependencies: ${depsToInstall.joinToString(", ") { dependency -> dependency }}")
-        val formattedDepsToInstall = with(depsToInstall) {
+        val devDepsToInstall = component.devDependencies.filter { dependency ->
+            !depsManager.isDependencyInstalled(dependency)
+        }
+        if (depsToInstall.isEmpty() && devDepsToInstall.isEmpty()) return
+        log.debug(
+            "Asking to install ${depsToInstall.size} dependencies (${depsToInstall.joinToString(", ")}) & ${devDepsToInstall.size} dev dependencies (${
+                devDepsToInstall.joinToString(
+                    ", "
+                )
+            })"
+        )
+        val formattedDepsToInstall = with(depsToInstall.plus(devDepsToInstall)) {
             if (size == 1) first() else {
                 "${dropLast(1).joinToString(", ")} and ${last()}"
             }
@@ -261,13 +270,18 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             "Installed ${component.name}",
             "${component.name} requires $formattedDepsToInstall to be installed."
         ) { notif ->
-            mapOf(
-                "Install" to DependencyManager.InstallationType.PROD,
-                "Install as dev" to DependencyManager.InstallationType.DEV
-            ).map { (label, installType) ->
-                NotificationAction.createSimple(label) {
+            listOf(
+                NotificationAction.createSimple("Install") {
                     runAsync {
-                        depsManager.installDependencies(depsToInstall, installType)
+                        (if (depsToInstall.isNotEmpty())
+                            depsManager.installDependencies(depsToInstall, DependencyManager.InstallationType.PROD)
+                        else true) &&
+                                (if (devDepsToInstall.isNotEmpty())
+                                    depsManager.installDependencies(
+                                        devDepsToInstall,
+                                        DependencyManager.InstallationType.DEV
+                                    )
+                                else true)
                     }.then { installSuccess ->
                         if (installSuccess) {
                             log.info("Installed $formattedDepsToInstall for ${component.name}")
@@ -286,7 +300,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     }
                     notif.expire()
                 }
-            }
+            )
         }
     }
 
@@ -325,9 +339,12 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
         // Remove dependencies no longer needed by any component
         val remoteComponents = fetchAllComponents()
-        val allPossiblyNeededDependencies = remoteComponents.map { it.dependencies }.flatten().toSet()
+        val allPossiblyNeededDependencies =
+            remoteComponents.map { it.dependencies.plus(it.devDependencies) }.flatten().toSet()
         val currentlyNeededDependencies = getInstalledComponents().map { component ->
-            remoteComponents.find { it.name == component }?.dependencies ?: emptyList()
+            remoteComponents.find { it.name == component }?.let {
+                it.dependencies.plus(it.devDependencies)
+            } ?: emptyList()
         }.flatten().toSet()
         val uselessDependencies =
             DependencyManager.getInstance(project).getInstalledDependencies().filter { dependency ->
