@@ -100,32 +100,34 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
         importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
             if (!`package`.startsWith("@/")) return@replacer `package`
 
+            if (`package` == "@/lib/utils") return@replacer config.aliases.utils
+
             if (!`package`.startsWith("@/registry/")) return@replacer `package`.replace(
                 Regex("^@/"),
-                "${config.aliases.components.substringBefore("/")}/"
+                escapeRegexValue("${config.aliases.components.substringBefore("/")}/")
             )
 
             if (`package`.matches(uiPathPattern)) return@replacer `package`.replace(
                 uiPathPattern,
-                config.aliases.ui ?: "${config.aliases.components}/ui"
+                escapeRegexValue(config.aliases.ui ?: "${config.aliases.components}/ui")
             )
 
             if (config.aliases.components.isNotEmpty() && `package`.matches(componentsPathPattern)) return@replacer `package`.replace(
                 componentsPathPattern,
-                config.aliases.components
+                escapeRegexValue(config.aliases.components)
             )
 
             if (config.aliases.lib != null && `package`.matches(libPathPattern)) return@replacer `package`.replace(
                 libPathPattern,
-                config.aliases.lib
+                escapeRegexValue(config.aliases.lib)
             )
 
             if (config.aliases.composables != null && `package`.matches(composablesPathPattern)) return@replacer `package`.replace(
                 composablesPathPattern,
-                config.aliases.composables
+                escapeRegexValue(config.aliases.composables)
             )
 
-            `package`.replace(Regex("^@/registry/[^/]+"), config.aliases.components)
+            `package`.replace(Regex("^@/registry/[^/]+"), escapeRegexValue(config.aliases.components))
         }
 
         val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")

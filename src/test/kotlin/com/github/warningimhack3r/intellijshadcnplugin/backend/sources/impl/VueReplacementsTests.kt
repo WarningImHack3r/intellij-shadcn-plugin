@@ -42,25 +42,25 @@ class VueReplacementsTests : ReplacementsTests() {
     }
 
     fun testImportMatchingRegistry() {
-        compareImports("@/components/bar", "@/lib/registry/foo/bar")
+        compareImports("@/components/bar", "@/registry/foo/bar")
     }
 
     fun testImportMatchingRegistry2() {
-        compareImports("@/components", "@/lib/registry/foo")
+        compareImports("@/components", "@/registry/foo")
     }
 
     fun testImportNotMatchingRegistry() {
-        compareImports("@/lib/notregistry/foo", "@/lib/notregistry/foo")
+        compareImports("@/notregistry/foo", "@/notregistry/foo")
     }
 
     fun testImportMatchingRegistryWithUI() {
         useNotNullUI = true
-        compareImports("@/ui", "@/lib/registry/foo/ui")
+        compareImports("@/ui", "@/registry/foo/ui")
     }
 
     fun testImportNotMatchingRegistryWithUI() {
         useNotNullUI = true
-        compareImports("@/lib/registry/foo", "@/lib/registry/foo")
+        compareImports("@/components", "@/registry/foo")
     }
 
     fun testImportMatchingUI() {
