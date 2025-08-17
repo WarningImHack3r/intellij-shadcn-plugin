@@ -58,7 +58,7 @@ class VueReplacementsTests : ReplacementsTests() {
         compareImports("@/ui", "@/registry/foo/ui")
     }
 
-    fun testImportNotMatchingRegistryWithUI() {
+    fun testImportMatchingRegistryWithUIComponents() {
         useNotNullUI = true
         compareImports("@/components", "@/registry/foo")
     }
