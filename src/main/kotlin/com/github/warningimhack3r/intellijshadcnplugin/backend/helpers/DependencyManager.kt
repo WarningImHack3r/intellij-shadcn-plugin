@@ -60,7 +60,9 @@ class DependencyManager(private val project: Project) {
             packageManager.command,
             packageManager.getInstallCommand(),
             if (installationType == InstallationType.DEV) "-D" else null,
-            *dependenciesNames.let { deps ->
+            *dependenciesNames.let { dependencies ->
+                // remove hardcoded versions
+                val deps = dependencies.map { it.replace(Regex("@\\W+?[\\w.-]+$"), "") }
                 if (packageManager in listOf(PackageManager.DENO)) {
                     deps.map { "npm:$it" }
                 } else deps
