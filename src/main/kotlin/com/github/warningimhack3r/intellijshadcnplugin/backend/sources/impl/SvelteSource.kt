@@ -48,7 +48,7 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
         val configFileName = if (usesKit) ".svelte-kit/tsconfig.json" else {
             with(getLocalConfig()) {
                 when (this) {
-                    is SvelteConfigTsObject -> typescript.config ?: "tsconfig.json"
+                    is SvelteConfigTsObject -> typescript.config?.takeIf { it.isNotBlank() } ?: "tsconfig.json"
                     is SvelteConfigTsBoolean -> if (typescript) "tsconfig.json" else "jsconfig.json"
                 }
             }
@@ -76,9 +76,10 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
             ?.asJsonObject?.get(alias.substringBefore("/"))
             ?.asJsonArray?.get(0)
             ?.asJsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
-        return "${aliasPath.replace(Regex("^\\.+/"), "")}/${alias.substringAfter("/")}".also {
-            log.debug("Resolved alias $alias to $it")
-        }
+        val normalized = aliasPath.replace(Regex("^\\.+/"), "")
+        val suffix = alias.substringAfter("/", "")
+        val resolved = if (suffix.isEmpty()) normalized else "$normalized/$suffix"
+        return resolved.also { log.debug("Resolved alias $alias to $it") }
     }
 
     private fun wantsTypescript(config: SvelteConfig) = with(config) {

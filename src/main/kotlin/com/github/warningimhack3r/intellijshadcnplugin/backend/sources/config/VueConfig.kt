@@ -9,7 +9,7 @@ import kotlinx.serialization.Serializable
  * @param typescript Whether to use TypeScript over JavaScript.
  * @param tailwind The Tailwind configuration.
  * @param aliases The aliases for the components and utils directories.
- * @param iconLibrary The icon library
+ * @param iconLibrary The icon library.
  */
 @Suppress("kotlin:S117", "unused")
 @Serializable
