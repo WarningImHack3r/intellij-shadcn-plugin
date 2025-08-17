@@ -110,10 +110,10 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
 
         val inlineColors = fetchColors().asJsonObject?.get("inlineColors")?.asJsonObject
             ?: throw Exception("Inline colors not found")
-        val lightColors = inlineColors.asJsonObject?.get("light")?.asJsonObject?.let { lightColors ->
+        val lightColors = inlineColors["light"]?.asJsonObject?.let { lightColors ->
             lightColors.keys.associateWith { lightColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
-        val darkColors = inlineColors.asJsonObject?.get("dark")?.asJsonObject?.let { darkColors ->
+        val darkColors = inlineColors["dark"]?.asJsonObject?.let { darkColors ->
             darkColors.keys.associateWith { darkColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
 
