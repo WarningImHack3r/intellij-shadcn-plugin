@@ -55,8 +55,6 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     protected abstract fun getURLPathForComponent(componentName: String): String
 
-    protected abstract fun getLocalPathForComponents(): String
-
     // Utility methods
     /**
      * Gets the local shadcn config, specified by the [configFile] name.
@@ -169,7 +167,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     fun getInstalledComponents(): List<String> {
         return FileManager.getInstance(project).getFileAtPath(
-            "${resolveAlias(getLocalPathForComponents())}/ui"
+            "${resolveAlias(getLocalConfig().aliases.components)}/ui"
         )?.children?.map { file ->
             if (file.isDirectory) file.name else file.name.substringBeforeLast(".")
         }?.sorted()?.also {
@@ -180,7 +178,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     }
 
     fun addComponent(componentName: String) {
-        val componentsPath = resolveAlias(getLocalPathForComponents())
+        val componentsPath = resolveAlias(getLocalConfig().aliases.components)
         // Install component
         val component = fetchComponent(componentName)
         val installedComponents = getInstalledComponents()
@@ -318,7 +316,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     fun isComponentUpToDate(componentName: String): Boolean {
         val remoteComponent = fetchComponent(componentName)
         val componentPath =
-            "${resolveAlias(getLocalPathForComponents())}/${remoteComponent.type.substringAfterLast(":")}${
+            "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}${
                 if (usesDirectoriesForComponents()) {
                     "/${remoteComponent.name}"
                 } else ""
@@ -357,7 +355,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     fun removeComponent(componentName: String) {
         val remoteComponent = fetchComponent(componentName)
         val componentsDir =
-            "${resolveAlias(getLocalPathForComponents())}/${remoteComponent.type.substringAfterLast(":")}"
+            "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}"
         if (usesDirectoriesForComponents()) {
             FileManager.getInstance(project).deleteFileAtPath("$componentsDir/${remoteComponent.name}")
         } else {

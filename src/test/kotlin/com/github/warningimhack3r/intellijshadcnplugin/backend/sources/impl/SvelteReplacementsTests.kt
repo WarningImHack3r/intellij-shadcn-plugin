@@ -1,23 +1,21 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfig
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfigTsBoolean
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 
 class SvelteReplacementsTests : ReplacementsTests() {
 
     class SvelteSourceStub(project: Project) : SvelteSource(project) {
-        override fun getLocalConfig() = SvelteConfig(
+        override fun getLocalConfig() = SvelteConfigTsBoolean(
             tailwind = SvelteConfig.Tailwind(
-                css = "src/app.pcss",
+                css = "src/app.css",
                 baseColor = "slate"
             ),
             aliases = SvelteConfig.Aliases(
                 components = $$"$lib/components",
-                utils = $$"$lib/replacedUtils",
-                ui = "",
-                hooks = "",
-                lib = ""
+                utils = $$"$lib/replacedUtils"
             )
         )
 

@@ -35,8 +35,6 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
     override fun getURLPathForComponent(componentName: String) =
         "r/styles/${getLocalConfig().style}/$componentName.json"
 
-    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
-
     override fun usesDirectoriesForComponents() = true
 
     override fun resolveAlias(alias: String): String {
@@ -55,11 +53,7 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
         }
 
         val config = getLocalConfig()
-        val tsConfigLocation = when (config.framework) {
-            VueConfig.Framework.NUXT -> ".nuxt/tsconfig.json"
-            else -> "tsconfig.json"
-        }.let { if (!config.typescript) "jsconfig.json" else it }
-
+        val tsConfigLocation = if (config.typescript) "tsconfig.json" else "jsconfig.json"
         val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(tsConfigLocation)
             ?: throw NoSuchFileException("$tsConfigLocation not found")
         val aliasPath = (resolvePath(tsConfig, tsConfigLocation) ?: if (config.typescript) {

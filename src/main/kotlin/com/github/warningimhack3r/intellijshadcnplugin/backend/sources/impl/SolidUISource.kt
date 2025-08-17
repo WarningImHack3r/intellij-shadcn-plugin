@@ -7,6 +7,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManag
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SolidUIConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
@@ -28,8 +29,6 @@ open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, Soli
     override fun getURLPathForRoot() = "registry/index.json"
 
     override fun getURLPathForComponent(componentName: String) = "registry/ui/$componentName.json"
-
-    override fun getLocalPathForComponents() = getLocalConfig().componentDir
 
     override fun usesDirectoriesForComponents() = false
 
@@ -78,11 +77,19 @@ open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, Soli
 
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
-        val pathAlias = config.aliases.path.replace("/*", "")
         importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
             return@replacer `package`
-                .replace("~/registry/ui", "$pathAlias/components/ui")
-                .replace("~/lib/utils", "$pathAlias/lib/utils")
+                .replace("~/registry/ui", config.aliases.components)
+                .replace("~/lib/utils", config.aliases.utils)
+        }
+
+        val replacementVisitor = JSXClassReplacementVisitor(project)
+        runReadAction { file.accept(replacementVisitor) }
+        replacementVisitor.replaceClasses replacer@{ `class` ->
+            val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
+            val className = `class`.substringAfterLast(":")
+            val twPrefix = config.tailwind.prefix
+            return@replacer "$modifier$twPrefix$className"
         }
     }
 }

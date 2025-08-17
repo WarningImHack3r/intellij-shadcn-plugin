@@ -10,10 +10,11 @@ import kotlinx.serialization.Serializable
  * @param tsx Whether to use TypeScript over JavaScript.
  * @param tailwind The Tailwind configuration.
  * @param aliases The aliases for the components and utils directories.
+ * @param iconLibrary The icon library
  */
-@Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117")
+@Suppress("kotlin:S117")
 @Serializable
-class ReactConfig(
+data class ReactConfig(
     override val `$schema`: String = "https://ui.shadcn.com/schema.json",
     val style: String,
     val rsc: Boolean = false,
@@ -32,9 +33,9 @@ class ReactConfig(
      * @param prefix The prefix to use for utility classes.
      */
     @Serializable
-    class Tailwind(
-        val config: String,
-        override val css: String,
+    data class Tailwind(
+        val config: String? = null,
+        val css: String,
         val baseColor: String,
         val cssVariables: Boolean = true,
         val prefix: String = ""
@@ -42,16 +43,14 @@ class ReactConfig(
 
     /**
      * The aliases for the components and utils directories.
-     * @param components The alias for the components' directory.
-     * @param utils The alias for the utils directory.
      * @param ui The alias for UI components.
      * @param lib The alias for the library components.
      * @param hooks The alias for the hooks directory.
      */
     @Serializable
-    class Aliases(
-        val components: String,
-        val utils: String,
+    data class Aliases(
+        override val components: String,
+        override val utils: String,
         val ui: String? = null,
         val lib: String? = null,
         val hooks: String? = null

@@ -9,6 +9,9 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSe
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.ShellRunner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfig
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfigDeserializer
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfigTsBoolean
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfigTsObject
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
@@ -20,7 +23,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
 import java.nio.file.NoSuchFileException
 
-open class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfig.serializer()) {
+open class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfigDeserializer) {
     companion object {
         private val log = logger<SvelteSource>()
         private var isJsUnsupportedNotified = false
@@ -33,8 +36,6 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
     override fun getURLPathForComponent(componentName: String) =
         "registry/$componentName.json"
 
-    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
-
     override fun usesDirectoriesForComponents() = true
 
     override fun resolveAlias(alias: String): String {
@@ -44,9 +45,14 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
         }
         val fileManager = FileManager.getInstance(project)
         val usesKit = DependencyManager.getInstance(project).isDependencyInstalled("@sveltejs/kit")
-        val configFileName = if (usesKit) {
-            ".svelte-kit/tsconfig.json"
-        } else if (getLocalConfig().typescript) "tsconfig.json" else "jsconfig.json"
+        val configFileName = if (usesKit) ".svelte-kit/tsconfig.json" else {
+            with(getLocalConfig()) {
+                when (this) {
+                    is SvelteConfigTsObject -> typescript.config ?: ""
+                    is SvelteConfigTsBoolean -> if (typescript) "tsconfig.json" else "jsconfig.json"
+                }
+            }
+        }
         var tsConfig = fileManager.getFileContentsAtPath(configFileName)
         if (tsConfig == null) {
             if (!usesKit) throw NoSuchFileException("Cannot get $configFileName")
@@ -75,8 +81,15 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
         }
     }
 
+    private fun wantsTypescript(config: SvelteConfig) = with(config) {
+        when (this) {
+            is SvelteConfigTsObject -> typescript.config != null
+            is SvelteConfigTsBoolean -> typescript
+        }
+    }
+
     override fun adaptFileExtensionToConfig(extension: String): String {
-        return if (getLocalConfig().typescript) extension else {
+        return if (wantsTypescript(getLocalConfig())) extension else {
             extension.replace(
                 Regex("\\.ts$"),
                 ".js"
@@ -86,7 +99,7 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
 
     override fun adaptFileToConfig(file: PsiFile) {
         val config = getLocalConfig()
-        if (!config.typescript) {
+        if (!wantsTypescript(config)) {
             if (!isJsUnsupportedNotified) {
                 NotificationManager(project).sendNotification(
                     "TypeScript option for Svelte",

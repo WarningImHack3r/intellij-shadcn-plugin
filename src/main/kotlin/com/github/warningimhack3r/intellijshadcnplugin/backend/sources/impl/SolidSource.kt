@@ -38,8 +38,6 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
     override fun getURLPathForComponent(componentName: String) =
         "registry/frameworks/${cssFrameworkName()}/$componentName.json"
 
-    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
-
     override fun usesDirectoriesForComponents() = false
 
     override fun resolveAlias(alias: String): String {
@@ -91,7 +89,7 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
             val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
             val className = `class`.substringAfterLast(":")
             val twPrefix = config.tailwind?.prefix ?: config.uno?.prefix ?: ""
-            if (config.tailwind?.cssVariables == true || config.uno?.cssVariables == true) {
+            if (config.tailwind?.css?.variable == true || config.uno?.css?.variable == true) {
                 return@replacer "$modifier$twPrefix$className"
             }
             if (className == "border") {
@@ -110,7 +108,7 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
 
     override fun fetchColors(): JsonElement {
         val config = getLocalConfig()
-        val baseColor = config.tailwind?.baseColor ?: config.uno?.baseColor
+        val baseColor = config.tailwind?.color ?: config.uno?.color
         ?: throw Exception("Base color not found. Is your config valid?")
         return RequestSender.sendRequest("$domain/registry/colors/${cssFrameworkName()}/$baseColor.json").ok {
             Json.parseToJsonElement(it.body)

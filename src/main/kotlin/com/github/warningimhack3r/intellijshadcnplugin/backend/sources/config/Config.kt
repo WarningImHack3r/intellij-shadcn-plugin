@@ -27,16 +27,21 @@ sealed class Config {
      * The Tailwind configuration.
      */
     @Serializable
-    sealed class Tailwind {
-        /**
-         * The relative path of the Tailwind CSS file.
-         */
-        abstract val css: String
-    }
+    sealed class Tailwind
 
     /**
      * The aliases for the components and utils directories.
      */
     @Serializable
-    sealed class Aliases
+    sealed class Aliases {
+        /**
+         * The alias for the components' directory.
+         */
+        abstract val components: String
+
+        /**
+         * The alias for the utils directory.
+         */
+        abstract val utils: String
+    }
 }

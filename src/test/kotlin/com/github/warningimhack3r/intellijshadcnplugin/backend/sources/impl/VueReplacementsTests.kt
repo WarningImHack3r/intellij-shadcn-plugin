@@ -17,7 +17,6 @@ class VueReplacementsTests : ReplacementsTests() {
                 baseColor = "slate",
                 cssVariables = true
             ),
-            framework = VueConfig.Framework.NUXT,
             aliases = VueConfig.Aliases(
                 components = "@/components",
                 utils = "@/lib/utilsReplaced",

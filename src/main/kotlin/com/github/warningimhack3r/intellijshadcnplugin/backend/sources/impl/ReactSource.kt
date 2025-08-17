@@ -33,8 +33,6 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
     override fun getURLPathForComponent(componentName: String) =
         "r/styles/${getLocalConfig().style}/$componentName.json"
 
-    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
-
     override fun usesDirectoriesForComponents() = false
 
     override fun resolveAlias(alias: String): String {

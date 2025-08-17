@@ -8,11 +8,13 @@ class SolidReplacementsTests : ReplacementsTests() {
 
     class SolidSourceStub(project: Project) : SolidSource(project) {
         override fun getLocalConfig() = SolidConfig(
-            tailwind = SolidConfig.Tailwind(
+            tailwind = SolidConfig.CssConfig(
                 config = "tailwind.config.cjs",
-                css = "src/root.css",
-                baseColor = "slate",
-                cssVariables = true
+                css = SolidConfig.CssConfig.Css(
+                    path = "src/root.css",
+                    variable = true
+                ),
+                color = "slate",
             ),
             aliases = SolidConfig.Aliases(
                 components = "@/components",
