@@ -1,5 +1,8 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonArray
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonPrimitive
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSender
@@ -13,7 +16,8 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.nio.file.NoSuchFileException
 
 open class SvelteSource(project: Project) : Source<SvelteConfig>(project, SvelteConfig.serializer()) {
@@ -61,11 +65,11 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
                     ?: throw NoSuchFileException("Cannot get $configFileName after sync")
         }
         val aliasPath = parseTsConfig(tsConfig)
-            .jsonObject["compilerOptions"]
-            ?.jsonObject?.get("paths")
-            ?.jsonObject?.get(alias.substringBefore("/"))
-            ?.jsonArray?.get(0)
-            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
+            .asJsonObject?.get("compilerOptions")
+            ?.asJsonObject?.get("paths")
+            ?.asJsonObject?.get(alias.substringBefore("/"))
+            ?.asJsonArray?.get(0)
+            ?.asJsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return "${aliasPath.replace(Regex("^\\.+/"), "")}/${alias.substringAfter("/")}".also {
             log.debug("Resolved alias $alias to $it")
         }

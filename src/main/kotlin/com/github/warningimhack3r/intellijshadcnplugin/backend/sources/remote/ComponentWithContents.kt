@@ -52,7 +52,7 @@ sealed class ComponentWithContents {
      */
     val filePaths
         get() = when (this) {
-            is ComponentWithContentsNewFiles -> files.map { it.filePath.substringAfterLast("/") }
+            is ComponentWithContentsNewFiles -> files.map { it.filePath }
             is ComponentWithContentsLegacyFiles -> files.map { it.name }
         }
 

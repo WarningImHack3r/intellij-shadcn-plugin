@@ -1,5 +1,8 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonArray
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonPrimitive
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SolidUIConfig
@@ -10,9 +13,6 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import java.nio.file.NoSuchFileException
 
 open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, SolidUIConfig.serializer()) {
@@ -42,11 +42,11 @@ open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, Soli
         val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = parseTsConfig(tsConfig)
-            .jsonObject["compilerOptions"]
-            ?.jsonObject?.get("paths")
-            ?.jsonObject?.get("${alias.substringBefore("/")}/*")
-            ?.jsonArray?.get(0)
-            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
+            .asJsonObject?.get("compilerOptions")
+            ?.asJsonObject?.get("paths")
+            ?.asJsonObject?.get("${alias.substringBefore("/")}/*")
+            ?.asJsonArray?.get(0)
+            ?.asJsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/")).also {
                 log.debug("Resolved alias $alias to $it")

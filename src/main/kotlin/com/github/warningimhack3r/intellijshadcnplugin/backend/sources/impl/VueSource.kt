@@ -1,5 +1,8 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonArray
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonPrimitive
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
@@ -15,7 +18,8 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.nio.file.NoSuchFileException
 
 open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
@@ -43,11 +47,11 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
 
         fun resolvePath(configFile: String, fileName: String): String? {
             return parseTsConfig(configFile, fileName)
-                .jsonObject["compilerOptions"]
-                ?.jsonObject?.get("paths")
-                ?.jsonObject?.get("${alias.substringBefore("/")}/*")
-                ?.jsonArray?.get(0)
-                ?.jsonPrimitive?.content
+                .asJsonObject?.get("compilerOptions")
+                ?.asJsonObject?.get("paths")
+                ?.asJsonObject?.get("${alias.substringBefore("/")}/*")
+                ?.asJsonArray?.get(0)
+                ?.asJsonPrimitive?.content
         }
 
         val config = getLocalConfig()
@@ -113,13 +117,13 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
 
         val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
 
-        val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
+        val inlineColors = fetchColors().asJsonObject?.get("inlineColors")?.asJsonObject
             ?: throw Exception("Inline colors not found")
-        val lightColors = inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
-            lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
+        val lightColors = inlineColors.asJsonObject?.get("light")?.asJsonObject?.let { lightColors ->
+            lightColors.keys.associateWith { lightColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
-        val darkColors = inlineColors.jsonObject["dark"]?.jsonObject?.let { darkColors ->
-            darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
+        val darkColors = inlineColors.asJsonObject?.get("dark")?.asJsonObject?.let { darkColors ->
+            darkColors.keys.associateWith { darkColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
 
         val classReplacementVisitor = VueClassReplacementVisitor(project)

@@ -1,5 +1,8 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonArray
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonPrimitive
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
@@ -13,7 +16,8 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.nio.file.NoSuchFileException
 
 open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactConfig.serializer()) {
@@ -42,11 +46,11 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
         val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = parseTsConfig(tsConfig)
-            .jsonObject["compilerOptions"]
-            ?.jsonObject?.get("paths")
-            ?.jsonObject?.get("${alias.substringBefore("/")}/*")
-            ?.jsonArray?.get(0)
-            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
+            .asJsonObject?.get("compilerOptions")
+            ?.asJsonObject?.get("paths")
+            ?.asJsonObject?.get("${alias.substringBefore("/")}/*")
+            ?.asJsonArray?.get(0)
+            ?.asJsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/")).also {
                 log.debug("Resolved alias $alias to $it")
@@ -104,13 +108,13 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
 
         val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
 
-        val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
+        val inlineColors = fetchColors().asJsonObject?.get("inlineColors")?.asJsonObject
             ?: throw Exception("Inline colors not found")
-        val lightColors = inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
-            lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
+        val lightColors = inlineColors.asJsonObject?.get("light")?.asJsonObject?.let { lightColors ->
+            lightColors.keys.associateWith { lightColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
-        val darkColors = inlineColors.jsonObject["dark"]?.jsonObject?.let { darkColors ->
-            darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
+        val darkColors = inlineColors.asJsonObject?.get("dark")?.asJsonObject?.let { darkColors ->
+            darkColors.keys.associateWith { darkColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
 
         val replacementVisitor = JSXClassReplacementVisitor(project)

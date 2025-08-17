@@ -5,7 +5,7 @@ import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import kotlin.reflect.KClass
 import kotlin.reflect.full.primaryConstructor
 
-@TestDataPath("\$CONTENT_ROOT/src/test/testData")
+@TestDataPath($$"$CONTENT_ROOT/src/test/testData")
 class ClassReplacementTests : BasePlatformTestCase() {
 
     override fun getTestDataPath() = "src/test/testData/classReplacement"

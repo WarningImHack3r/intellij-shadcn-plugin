@@ -104,7 +104,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
      * @param value The value to escape
      * @return The value, escaped if necessary
      */
-    protected fun escapeRegexValue(value: String) = if (value.startsWith("\$")) {
+    protected fun escapeRegexValue(value: String) = if (value.startsWith("$")) {
         "\\$value" // fixes Kotlin silently failing when the replacement starts with $ with a regex
     } else value
 

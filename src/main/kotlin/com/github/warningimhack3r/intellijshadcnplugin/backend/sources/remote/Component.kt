@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
 data class Component(
     val name: String,
     val type: String,
-    val dependencies: List<String>,
-    val devDependencies: List<String>,
-    val registryDependencies: List<String>
+    val dependencies: List<String> = emptyList(),
+    val devDependencies: List<String> = emptyList(),
+    val registryDependencies: List<String> = emptyList()
 )

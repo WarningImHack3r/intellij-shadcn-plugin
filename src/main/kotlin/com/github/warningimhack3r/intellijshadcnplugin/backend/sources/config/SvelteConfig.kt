@@ -40,9 +40,9 @@ class SvelteConfig(
     @Serializable
     class Aliases(
         val components: String,
-        val utils: String,
-        val ui: String,
-        val hooks: String,
-        val lib: String
+        val utils: String = "",
+        val ui: String = "",
+        val hooks: String = "",
+        val lib: String = ""
     ) : Config.Aliases()
 }
