@@ -14,8 +14,8 @@ class SolidUIReplacementsTests : ReplacementsTests() {
                 css = "src/app.css"
             ),
             aliases = SolidUIConfig.Aliases(
-                components = "@/*",
-                utils = ""
+                components = "@/components/ui",
+                utils = "@/lib/utils"
             )
         )
 

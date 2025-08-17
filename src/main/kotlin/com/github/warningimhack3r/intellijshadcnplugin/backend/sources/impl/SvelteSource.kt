@@ -48,7 +48,7 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
         val configFileName = if (usesKit) ".svelte-kit/tsconfig.json" else {
             with(getLocalConfig()) {
                 when (this) {
-                    is SvelteConfigTsObject -> typescript.config ?: ""
+                    is SvelteConfigTsObject -> typescript.config ?: "tsconfig.json"
                     is SvelteConfigTsBoolean -> if (typescript) "tsconfig.json" else "jsconfig.json"
                 }
             }
