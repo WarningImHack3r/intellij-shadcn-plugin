@@ -91,22 +91,41 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
             // TODO: detype Vue file
         }
 
+        val uiPathPattern = Regex("^@/registry/(.+)/ui")
+        val componentsPathPattern = Regex("^@/registry/(.+)/components")
+        val libPathPattern = Regex("^@/registry/(.+)/lib")
+        val composablesPathPattern = Regex("^@/registry/(.+)/composables")
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
         importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
-            if (`package`.startsWith("@/lib/registry/")) {
-                return@replacer if (config.aliases.ui != null) {
-                    `package`.replace(Regex("^@/lib/registry/[^/]+/ui"), escapeRegexValue(config.aliases.ui))
-                } else {
-                    `package`.replace(
-                        Regex("^@/lib/registry/[^/]+"),
-                        escapeRegexValue(config.aliases.components)
-                    )
-                }
-            } else if (`package` == "@/lib/utils") {
-                return@replacer config.aliases.utils
-            }
-            `package`
+            if (!`package`.startsWith("@/")) return@replacer `package`
+
+            if (!`package`.startsWith("@/registry/")) return@replacer `package`.replace(
+                Regex("^@/"),
+                "${config.aliases.components.substringBefore("/")}/"
+            )
+
+            if (`package`.matches(uiPathPattern)) return@replacer `package`.replace(
+                uiPathPattern,
+                config.aliases.ui ?: "${config.aliases.components}/ui"
+            )
+
+            if (config.aliases.components.isNotEmpty() && `package`.matches(componentsPathPattern)) return@replacer `package`.replace(
+                componentsPathPattern,
+                config.aliases.components
+            )
+
+            if (config.aliases.lib != null && `package`.matches(libPathPattern)) return@replacer `package`.replace(
+                libPathPattern,
+                config.aliases.lib
+            )
+
+            if (config.aliases.composables != null && `package`.matches(composablesPathPattern)) return@replacer `package`.replace(
+                composablesPathPattern,
+                config.aliases.composables
+            )
+
+            `package`.replace(Regex("^@/registry/[^/]+"), config.aliases.components)
         }
 
         val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")

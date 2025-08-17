@@ -78,22 +78,41 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
             // TODO: detype React file
         }
 
+        val uiPathPattern = Regex("^@/registry/(.+)/ui")
+        val componentsPathPattern = Regex("^@/registry/(.+)/components")
+        val libPathPattern = Regex("^@/registry/(.+)/lib")
+        val hooksPathPattern = Regex("^@/registry/(.+)/hooks")
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
         importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
-            if (`package`.startsWith("@/registry/")) {
-                return@replacer if (config.aliases.ui != null) {
-                    `package`.replace(Regex("^@/registry/[^/]+/ui"), escapeRegexValue(config.aliases.ui))
-                } else {
-                    `package`.replace(
-                        Regex("^@/registry/[^/]+"),
-                        escapeRegexValue(config.aliases.components)
-                    )
-                }
-            } else if (`package` == "@/lib/utils") {
-                return@replacer config.aliases.utils
-            }
-            `package`
+            if (!`package`.startsWith("@/")) return@replacer `package`
+
+            if (!`package`.startsWith("@/registry/")) return@replacer `package`.replace(
+                Regex("^@/"),
+                "${config.aliases.components.substringBefore("/")}/"
+            )
+
+            if (`package`.matches(uiPathPattern)) return@replacer `package`.replace(
+                uiPathPattern,
+                config.aliases.ui ?: "${config.aliases.components}/ui"
+            )
+
+            if (config.aliases.components.isNotEmpty() && `package`.matches(componentsPathPattern)) return@replacer `package`.replace(
+                componentsPathPattern,
+                config.aliases.components
+            )
+
+            if (config.aliases.lib != null && `package`.matches(libPathPattern)) return@replacer `package`.replace(
+                libPathPattern,
+                config.aliases.lib
+            )
+
+            if (config.aliases.hooks != null && `package`.matches(hooksPathPattern)) return@replacer `package`.replace(
+                hooksPathPattern,
+                config.aliases.hooks
+            )
+
+            `package`.replace(Regex("^@/registry/[^/]+"), config.aliases.components)
         }
 
         if (!config.rsc) {
