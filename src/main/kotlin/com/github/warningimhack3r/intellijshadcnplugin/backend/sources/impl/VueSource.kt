@@ -1,10 +1,15 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonArray
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonPrimitive
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.VueConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContentsLegacyFiles
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContentsNewFiles
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
@@ -13,7 +18,8 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.nio.file.NoSuchFileException
 
 open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.serializer()) {
@@ -24,10 +30,10 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
 
     override var framework = "Vue"
 
+    override fun getURLPathForRoot() = "r/index.json"
+
     override fun getURLPathForComponent(componentName: String) =
         "r/styles/${getLocalConfig().style}/$componentName.json"
-
-    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
 
     override fun usesDirectoriesForComponents() = true
 
@@ -39,19 +45,15 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
 
         fun resolvePath(configFile: String, fileName: String): String? {
             return parseTsConfig(configFile, fileName)
-                .jsonObject["compilerOptions"]
-                ?.jsonObject?.get("paths")
-                ?.jsonObject?.get("${alias.substringBefore("/")}/*")
-                ?.jsonArray?.get(0)
-                ?.jsonPrimitive?.content
+                .asJsonObject?.get("compilerOptions")
+                ?.asJsonObject?.get("paths")
+                ?.asJsonObject?.get("${alias.substringBefore("/")}/*")
+                ?.asJsonArray?.get(0)
+                ?.asJsonPrimitive?.content
         }
 
         val config = getLocalConfig()
-        val tsConfigLocation = when (config.framework) {
-            VueConfig.Framework.NUXT -> ".nuxt/tsconfig.json"
-            else -> "tsconfig.json"
-        }.let { if (!config.typescript) "jsconfig.json" else it }
-
+        val tsConfigLocation = if (config.typescript) "tsconfig.json" else "jsconfig.json"
         val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(tsConfigLocation)
             ?: throw NoSuchFileException("$tsConfigLocation not found")
         val aliasPath = (resolvePath(tsConfig, tsConfigLocation) ?: if (config.typescript) {
@@ -89,33 +91,54 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
             // TODO: detype Vue file
         }
 
+        val uiPathPattern = Regex("^@/registry/(.+)/ui")
+        val componentsPathPattern = Regex("^@/registry/(.+)/components")
+        val libPathPattern = Regex("^@/registry/(.+)/lib")
+        val composablesPathPattern = Regex("^@/registry/(.+)/composables")
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
         importsPackagesReplacementVisitor.replaceImports replacer@{ `package` ->
-            if (`package`.startsWith("@/lib/registry/")) {
-                return@replacer if (config.aliases.ui != null) {
-                    `package`.replace(Regex("^@/lib/registry/[^/]+/ui"), escapeRegexValue(config.aliases.ui))
-                } else {
-                    `package`.replace(
-                        Regex("^@/lib/registry/[^/]+"),
-                        escapeRegexValue(config.aliases.components)
-                    )
-                }
-            } else if (`package` == "@/lib/utils") {
-                return@replacer config.aliases.utils
-            }
-            `package`
+            if (!`package`.startsWith("@/")) return@replacer `package`
+
+            if (`package` == "@/lib/utils") return@replacer config.aliases.utils
+
+            if (!`package`.startsWith("@/registry/")) return@replacer `package`.replace(
+                Regex("^@/"),
+                escapeRegexValue("${config.aliases.components.substringBefore("/")}/")
+            )
+
+            if (`package`.matches(uiPathPattern)) return@replacer `package`.replace(
+                uiPathPattern,
+                escapeRegexValue(config.aliases.ui ?: "${config.aliases.components}/ui")
+            )
+
+            if (config.aliases.components.isNotEmpty() && `package`.matches(componentsPathPattern)) return@replacer `package`.replace(
+                componentsPathPattern,
+                escapeRegexValue(config.aliases.components)
+            )
+
+            if (config.aliases.lib != null && `package`.matches(libPathPattern)) return@replacer `package`.replace(
+                libPathPattern,
+                escapeRegexValue(config.aliases.lib)
+            )
+
+            if (config.aliases.composables != null && `package`.matches(composablesPathPattern)) return@replacer `package`.replace(
+                composablesPathPattern,
+                escapeRegexValue(config.aliases.composables)
+            )
+
+            `package`.replace(Regex("^@/registry/[^/]+"), escapeRegexValue(config.aliases.components))
         }
 
         val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
 
-        val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
+        val inlineColors = fetchColors().asJsonObject?.get("inlineColors")?.asJsonObject
             ?: throw Exception("Inline colors not found")
-        val lightColors = inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
-            lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
+        val lightColors = inlineColors["light"]?.asJsonObject?.let { lightColors ->
+            lightColors.keys.associateWith { lightColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
-        val darkColors = inlineColors.jsonObject["dark"]?.jsonObject?.let { darkColors ->
-            darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
+        val darkColors = inlineColors["dark"]?.asJsonObject?.let { darkColors ->
+            darkColors.keys.associateWith { darkColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
 
         val classReplacementVisitor = VueClassReplacementVisitor(project)
@@ -149,9 +172,16 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
     }
 
     override fun getRegistryDependencies(component: ComponentWithContents): List<ComponentWithContents> {
-        return super.getRegistryDependencies(
-            component.copy(
-                registryDependencies = component.registryDependencies.filterNot { it == "utils" }
-            ))
+        return super.getRegistryDependencies(with(component) {
+            when (this) {
+                is ComponentWithContentsLegacyFiles -> copy(
+                    registryDependencies = registryDependencies.filterNot { it == "utils" }
+                )
+
+                is ComponentWithContentsNewFiles -> copy(
+                    registryDependencies = registryDependencies.filterNot { it == "utils" }
+                )
+            }
+        })
     }
 }

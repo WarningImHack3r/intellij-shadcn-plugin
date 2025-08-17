@@ -9,13 +9,13 @@ class SolidUIReplacementsTests : ReplacementsTests() {
     class SolidUISourceStub(project: Project) : SolidUISource(project) {
         override fun getLocalConfig() = SolidUIConfig(
             tsx = true,
-            componentDir = "./src/components/ui",
             tailwind = SolidUIConfig.Tailwind(
                 config = "tailwind.config.cjs",
                 css = "src/app.css"
             ),
             aliases = SolidUIConfig.Aliases(
-                path = "@/*",
+                components = "@/components/ui",
+                utils = "@/lib/utils"
             )
         )
 

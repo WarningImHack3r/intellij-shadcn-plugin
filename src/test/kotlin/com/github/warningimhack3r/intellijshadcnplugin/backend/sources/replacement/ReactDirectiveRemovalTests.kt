@@ -3,7 +3,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacem
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
-@TestDataPath("\$CONTENT_ROOT/src/test/testData")
+@TestDataPath($$"$CONTENT_ROOT/src/test/testData")
 class ReactDirectiveRemovalTests : BasePlatformTestCase() {
 
     override fun getTestDataPath() = "src/test/testData/reactDirectiveRemoval"

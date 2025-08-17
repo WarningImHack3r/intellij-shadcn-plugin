@@ -61,9 +61,9 @@ class ReactReplacementsTests : ReplacementsTests() {
         compareImports("@/ui", "@/registry/foo/ui")
     }
 
-    fun testImportNotMatchingRegistryWithUI() {
+    fun testImportMatchingRegistryWithUIComponents() {
         useNotNullUI = true
-        compareImports("@/registry/foo", "@/registry/foo")
+        compareImports("@/components", "@/registry/foo")
     }
 
     fun testImportMatchingUI() {

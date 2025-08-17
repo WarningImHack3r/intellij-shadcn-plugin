@@ -1,5 +1,8 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonArray
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonPrimitive
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
@@ -10,7 +13,8 @@ import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import java.nio.file.NoSuchFileException
 
 open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidConfig.serializer()) {
@@ -19,6 +23,8 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
     }
 
     override var framework = "Solid"
+
+    override fun getURLPathForRoot() = "registry/index.json"
 
     private fun cssFrameworkName(): String {
         val config = getLocalConfig()
@@ -32,8 +38,6 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
     override fun getURLPathForComponent(componentName: String) =
         "registry/frameworks/${cssFrameworkName()}/$componentName.json"
 
-    override fun getLocalPathForComponents() = getLocalConfig().aliases.components
-
     override fun usesDirectoriesForComponents() = false
 
     override fun resolveAlias(alias: String): String {
@@ -45,11 +49,11 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
         val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = parseTsConfig(tsConfig)
-            .jsonObject["compilerOptions"]
-            ?.jsonObject?.get("paths")
-            ?.jsonObject?.get("${alias.substringBefore("/")}/*")
-            ?.jsonArray?.get(0)
-            ?.jsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
+            .asJsonObject?.get("compilerOptions")
+            ?.asJsonObject?.get("paths")
+            ?.asJsonObject?.get("${alias.substringBefore("/")}/*")
+            ?.asJsonArray?.get(0)
+            ?.asJsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
         return aliasPath.replace(Regex("^\\.+/"), "")
             .replace(Regex("\\*$"), alias.substringAfter("/")).also {
                 log.debug("Resolved alias $alias to $it")
@@ -70,13 +74,13 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
 
         val prefixesToReplace = listOf("bg-", "text-", "border-", "ring-offset-", "ring-")
 
-        val inlineColors = fetchColors().jsonObject["inlineColors"]?.jsonObject
+        val inlineColors = fetchColors().asJsonObject?.get("inlineColors")?.asJsonObject
             ?: throw Exception("Inline colors not found")
-        val lightColors = inlineColors.jsonObject["light"]?.jsonObject?.let { lightColors ->
-            lightColors.keys.associateWith { lightColors[it]?.jsonPrimitive?.content ?: "" }
+        val lightColors = inlineColors["light"]?.asJsonObject?.let { lightColors ->
+            lightColors.keys.associateWith { lightColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
-        val darkColors = inlineColors.jsonObject["dark"]?.jsonObject?.let { darkColors ->
-            darkColors.keys.associateWith { darkColors[it]?.jsonPrimitive?.content ?: "" }
+        val darkColors = inlineColors["dark"]?.asJsonObject?.let { darkColors ->
+            darkColors.keys.associateWith { darkColors[it]?.asJsonPrimitive?.content ?: "" }
         } ?: emptyMap()
 
         val replacementVisitor = JSXClassReplacementVisitor(project)
@@ -85,7 +89,7 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
             val modifier = if (`class`.contains(":")) `class`.substringBeforeLast(":") + ":" else ""
             val className = `class`.substringAfterLast(":")
             val twPrefix = config.tailwind?.prefix ?: config.uno?.prefix ?: ""
-            if (config.tailwind?.cssVariables == true || config.uno?.cssVariables == true) {
+            if (config.tailwind?.css?.variable == true || config.uno?.css?.variable == true) {
                 return@replacer "$modifier$twPrefix$className"
             }
             if (className == "border") {
@@ -104,7 +108,7 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
 
     override fun fetchColors(): JsonElement {
         val config = getLocalConfig()
-        val baseColor = config.tailwind?.baseColor ?: config.uno?.baseColor
+        val baseColor = config.tailwind?.color ?: config.uno?.color
         ?: throw Exception("Base color not found. Is your config valid?")
         return RequestSender.sendRequest("$domain/registry/colors/${cssFrameworkName()}/$baseColor.json").ok {
             Json.parseToJsonElement(it.body)

@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 /**
  * A shadcn locally installed components.json file.
  */
-@Suppress("PROVIDED_RUNTIME_TOO_LOW", "kotlin:S117", "unused", "PropertyName")
+@Suppress("unused", "PropertyName")
 @Serializable
 sealed class Config {
     /**
@@ -27,21 +27,21 @@ sealed class Config {
      * The Tailwind configuration.
      */
     @Serializable
-    sealed class Tailwind {
-        /**
-         * The relative path to the Tailwind config file.
-         */
-        abstract val config: String
-
-        /**
-         * The relative path of the Tailwind CSS file.
-         */
-        abstract val css: String
-    }
+    sealed class Tailwind
 
     /**
      * The aliases for the components and utils directories.
      */
     @Serializable
-    sealed class Aliases
+    sealed class Aliases {
+        /**
+         * The alias for the components' directory.
+         */
+        abstract val components: String
+
+        /**
+         * The alias for the utils directory.
+         */
+        abstract val utils: String
+    }
 }

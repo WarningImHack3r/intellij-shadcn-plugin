@@ -1,11 +1,11 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.helpers
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.jsonObject
 
 @Service(Service.Level.PROJECT)
 class DependencyManager(private val project: Project) {
@@ -60,7 +60,9 @@ class DependencyManager(private val project: Project) {
             packageManager.command,
             packageManager.getInstallCommand(),
             if (installationType == InstallationType.DEV) "-D" else null,
-            *dependenciesNames.let { deps ->
+            *dependenciesNames.let { dependencies ->
+                // remove hardcoded versions
+                val deps = dependencies.map { it.replace(Regex("@\\W+?[\\w.-]+$"), "") }
                 if (packageManager in listOf(PackageManager.DENO)) {
                     deps.map { "npm:$it" }
                 } else deps
@@ -89,23 +91,16 @@ class DependencyManager(private val project: Project) {
         }
     } ?: throw IllegalStateException("No package manager found")
 
-    fun getInstalledDependencies(): List<String> {
-        // Read the package.json file
-        return FileManager.getInstance(project).getFileContentsAtPath("package.json")?.let { packageJson ->
-            Json.parseToJsonElement(packageJson).jsonObject.filter {
-                it.key == "dependencies" || it.key == "devDependencies"
-            }.map { it.value.jsonObject.keys }.flatten().also {
+    fun getInstalledDependencies() =
+        FileManager.getInstance(project).getFileContentsAtPath("package.json")?.let { packageJson ->
+            Json.parseToJsonElement(packageJson).asJsonObject?.filterKeys {
+                it == "dependencies" || it == "devDependencies"
+            }?.values?.mapNotNull { it.asJsonObject?.keys }?.flatten()?.distinct()?.also {
                 log.debug("Installed dependencies: $it")
             }
-        } ?: emptyList<String>().also {
-            log.error("package.json not found")
-        }
-    }
+        } ?: emptyList<String>().also { log.error("package.json not found") }
 
-    fun isDependencyInstalled(dependency: String): Boolean {
-        // Read the package.json file
-        return getInstalledDependencies().contains(dependency).also {
-            logger<DependencyManager>().debug("Is $dependency installed? $it")
-        }
+    fun isDependencyInstalled(dependency: String) = getInstalledDependencies().contains(dependency).also {
+        logger<DependencyManager>().debug("Is $dependency installed? $it")
     }
 }
