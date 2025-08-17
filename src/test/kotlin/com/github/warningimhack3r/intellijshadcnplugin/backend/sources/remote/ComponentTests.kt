@@ -6,35 +6,41 @@ import kotlinx.serialization.json.Json
 import org.intellij.lang.annotations.Language
 
 class ComponentTests : BasePlatformTestCase() {
-    private val testJson = Json
+    private val testJson = Json { ignoreUnknownKeys = true }
 
     fun testPolymorphicNoFiles() {
         @Language("JSON")
         val input = """
             [{ "name": "accordion", "type": "registry:ui" }]
         """.trimIndent()
-        val result = testJson.decodeFromString(ListSerializer(ComponentDeserializer), input)
+        val result = testJson.decodeFromString(
+            ListSerializer(ComponentWithContentsDeserializer),
+            input
+        )
         assertSize(1, result)
-        assertInstanceOf(result.first(), StringFileComponent::class.java)
+        assertInstanceOf(result.first(), ComponentWithContentsLegacyFiles::class.java)
     }
 
-    fun testPolymorphicStringFiles() {
+    fun testPolymorphicLegacyFiles() {
         @Language("JSON")
         val input = """
-            [{ "name": "accordion", "type": "registry:ui", "files": ["index.js"] }]
+            [{ "name": "accordion", "type": "registry:ui", "files": [{ "name": "index.js", "content": "..." }] }]
         """.trimIndent()
-        val result = testJson.decodeFromString(ListSerializer(ComponentDeserializer), input)
+        val result = testJson.decodeFromString(
+            ListSerializer(ComponentWithContentsDeserializer),
+            input
+        )
         assertSize(1, result)
-        assertInstanceOf(result.first(), StringFileComponent::class.java)
+        assertInstanceOf(result.first(), ComponentWithContentsLegacyFiles::class.java)
     }
 
-    fun testPolymorphicStructFiles() {
+    fun testPolymorphicNewFiles() {
         @Language("JSON")
         val input = """
             [{ "name": "accordion", "type": "registry:ui", "files": [{ "path": "index.js", "type": "registry:component" }] }]
         """.trimIndent()
-        val result = testJson.decodeFromString(ListSerializer(ComponentDeserializer), input)
+        val result = testJson.decodeFromString(ListSerializer(ComponentWithContentsDeserializer), input)
         assertSize(1, result)
-        assertInstanceOf(result.first(), StructFileComponent::class.java)
+        assertInstanceOf(result.first(), ComponentWithContentsNewFiles::class.java)
     }
 }

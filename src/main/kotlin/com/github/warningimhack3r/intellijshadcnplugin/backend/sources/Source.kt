@@ -5,9 +5,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManag
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Config
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.Component
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentDeserializer
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.*
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
@@ -141,7 +139,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     protected open fun fetchComponent(componentName: String): ComponentWithContents {
         return RequestSender.sendRequest("$domain/${getURLPathForComponent(componentName)}")
             .ok {
-                decodingJson.decodeFromString(ComponentWithContents.serializer(), it.body)
+                decodingJson.decodeFromString(ComponentWithContentsDeserializer, it.body)
             } ?: throw Exception("Component $componentName not found")
     }
 
@@ -159,7 +157,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     // Public methods
     fun fetchAllComponents(): List<Component> {
         return RequestSender.sendRequest("$domain/r/index.json").ok {
-            decodingJson.decodeFromString(ListSerializer(ComponentDeserializer), it.body)
+            decodingJson.decodeFromString(ListSerializer(Component.serializer()), it.body)
         }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
         } ?: emptyList<Component>().also {
@@ -199,7 +197,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             // Check for deprecated components
             if (usesDirectoriesForComponents()) {
                 val remotelyDeletedFiles = fileManager.getFileAtPath(path)?.children?.filter { file ->
-                    downloadedComponent.files.none { it.name == file.name }
+                    downloadedComponent.fileNames.none { it == file.name }
                 } ?: emptyList()
                 if (remotelyDeletedFiles.isNotEmpty()) {
                     val multipleFiles = remotelyDeletedFiles.size > 1
@@ -218,9 +216,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                                 }
                                 log.info(
                                     "Removed deprecated file${if (multipleFiles) "s" else ""} from ${downloadedComponent.name} (${
-                                        downloadedComponent.files.joinToString(", ") { file ->
-                                            file.name
-                                        }
+                                        downloadedComponent.fileNames.joinToString(", ")
                                     }): ${
                                         remotelyDeletedFiles.joinToString(", ") { file ->
                                             file.name
@@ -236,12 +232,25 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     }
                 }
             }
-            downloadedComponent.files.forEach { file ->
-                val psiFile = PsiHelper.createPsiFile(
-                    project, adaptFileExtensionToConfig(file.name), file.content
-                )
-                adaptFileToConfig(psiFile)
-                fileManager.saveFileAtPath(psiFile, path)
+
+            with(downloadedComponent) {
+                when (this) {
+                    is ComponentWithContentsNewFiles -> files.forEach { file ->
+                        val psiFile = PsiHelper.createPsiFile(
+                            project, adaptFileExtensionToConfig(file.filePath), file.content
+                        )
+                        adaptFileToConfig(psiFile)
+                        fileManager.saveFileAtPath(psiFile, path)
+                    }
+
+                    is ComponentWithContentsLegacyFiles -> files.forEach { file ->
+                        val psiFile = PsiHelper.createPsiFile(
+                            project, adaptFileExtensionToConfig(file.name), file.content
+                        )
+                        adaptFileToConfig(psiFile)
+                        fileManager.saveFileAtPath(psiFile, path)
+                    }
+                }
             }
         }
 
@@ -313,17 +322,34 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 } else ""
             }"
         val fileManager = FileManager.getInstance(project)
-        return remoteComponent.files.all { file ->
-            val psiFile = PsiHelper.createPsiFile(
-                project, adaptFileExtensionToConfig(file.name), file.content
-            )
-            adaptFileToConfig(psiFile)
-            (fileManager.getFileContentsAtPath("$componentPath/${file.name}") == runReadAction {
-                psiFile.text
-            }).also {
-                log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
+        return with(remoteComponent) {
+            when (this) {
+                is ComponentWithContentsNewFiles -> files.all { file ->
+                    val psiFile = PsiHelper.createPsiFile(
+                        project, adaptFileExtensionToConfig(file.filePath), file.content
+                    )
+                    adaptFileToConfig(psiFile)
+                    (fileManager.getFileContentsAtPath("$componentPath/${file.filePath}") == runReadAction {
+                        psiFile.text
+                    }).also {
+                        log.debug("File ${file.filePath} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
+                    }
+                }
+
+                is ComponentWithContentsLegacyFiles -> files.all { file ->
+                    val psiFile = PsiHelper.createPsiFile(
+                        project, adaptFileExtensionToConfig(file.name), file.content
+                    )
+                    adaptFileToConfig(psiFile)
+                    (fileManager.getFileContentsAtPath("$componentPath/${file.name}") == runReadAction {
+                        psiFile.text
+                    }).also {
+                        log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
+                    }
+                }
             }
         }
+
     }
 
     fun removeComponent(componentName: String) {
@@ -333,8 +359,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         if (usesDirectoriesForComponents()) {
             FileManager.getInstance(project).deleteFileAtPath("$componentsDir/${remoteComponent.name}")
         } else {
-            remoteComponent.files.forEach { file ->
-                FileManager.getInstance(project).deleteFileAtPath("$componentsDir/${file.name}")
+            remoteComponent.filePaths.forEach { file ->
+                FileManager.getInstance(project).deleteFileAtPath("$componentsDir/$file")
             }
         }
         // Remove dependencies no longer needed by any component

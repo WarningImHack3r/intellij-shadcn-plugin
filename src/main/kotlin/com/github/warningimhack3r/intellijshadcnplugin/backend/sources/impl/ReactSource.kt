@@ -52,11 +52,11 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
     }
 
     override fun adaptFileExtensionToConfig(extension: String): String {
-        return if (!getLocalConfig().tsx) {
+        return if (getLocalConfig().tsx) extension else {
             extension
                 .replace(Regex("\\.tsx$"), ".ts")
                 .replace(Regex("\\.jsx$"), ".js")
-        } else extension
+        }
     }
 
     override fun adaptFileToConfig(file: PsiFile) {

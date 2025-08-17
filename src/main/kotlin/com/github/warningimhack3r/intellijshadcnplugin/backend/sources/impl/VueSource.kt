@@ -5,6 +5,8 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSe
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.VueConfig
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContentsLegacyFiles
+import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContentsNewFiles
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
@@ -149,9 +151,16 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
     }
 
     override fun getRegistryDependencies(component: ComponentWithContents): List<ComponentWithContents> {
-        return super.getRegistryDependencies(
-            component.copy(
-                registryDependencies = component.registryDependencies.filterNot { it == "utils" }
-            ))
+        return super.getRegistryDependencies(with(component) {
+            when (this) {
+                is ComponentWithContentsLegacyFiles -> copy(
+                    registryDependencies = registryDependencies.filterNot { it == "utils" }
+                )
+
+                is ComponentWithContentsNewFiles -> copy(
+                    registryDependencies = registryDependencies.filterNot { it == "utils" }
+                )
+            }
+        })
     }
 }
