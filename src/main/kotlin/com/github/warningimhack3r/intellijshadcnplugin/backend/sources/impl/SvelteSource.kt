@@ -83,7 +83,7 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
 
     private fun wantsTypescript(config: SvelteConfig) = with(config) {
         when (this) {
-            is SvelteConfigTsObject -> typescript.config != null
+            is SvelteConfigTsObject -> true
             is SvelteConfigTsBoolean -> typescript
         }
     }

@@ -19,7 +19,7 @@ class VueConfig(
     val typescript: Boolean = true,
     override val tailwind: Tailwind,
     override val aliases: Aliases,
-    val iconLibrary: String? = null
+    private val iconLibrary: String? = null
 ) : Config() {
 
     /**
