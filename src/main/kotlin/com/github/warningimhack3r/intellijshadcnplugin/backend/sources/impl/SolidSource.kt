@@ -20,6 +20,8 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
 
     override var framework = "Solid"
 
+    override fun getURLPathForRoot() = "registry/index.json"
+
     private fun cssFrameworkName(): String {
         val config = getLocalConfig()
         return when {

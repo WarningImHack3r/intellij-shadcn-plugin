@@ -51,6 +51,8 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     abstract val framework: String
 
     // Paths
+    protected abstract fun getURLPathForRoot(): String
+
     protected abstract fun getURLPathForComponent(componentName: String): String
 
     protected abstract fun getLocalPathForComponents(): String
@@ -156,7 +158,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
 
     // Public methods
     fun fetchAllComponents(): List<Component> {
-        return RequestSender.sendRequest("$domain/r/index.json").ok {
+        return RequestSender.sendRequest("$domain/${getURLPathForRoot()}").ok {
             decodingJson.decodeFromString(ListSerializer(Component.serializer()), it.body)
         }?.also {
             log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
@@ -332,7 +334,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     (fileManager.getFileContentsAtPath("$componentPath/${file.filePath}") == runReadAction {
                         psiFile.text
                     }).also {
-                        log.debug("File ${file.filePath} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
+                        log.debug("[NEW] File ${file.filePath} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
                     }
                 }
 
@@ -344,7 +346,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     (fileManager.getFileContentsAtPath("$componentPath/${file.name}") == runReadAction {
                         psiFile.text
                     }).also {
-                        log.debug("File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
+                        log.debug("[OLD] File ${file.name} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")
                     }
                 }
             }

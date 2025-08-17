@@ -24,6 +24,8 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
 
     override var framework = "Svelte"
 
+    override fun getURLPathForRoot() = "registry/index.json"
+
     override fun getURLPathForComponent(componentName: String) =
         "registry/$componentName.json"
 

@@ -66,6 +66,7 @@ sealed class ComponentWithContents {
 
 /**
  * An individual shadcn component in the registry.
+ * Used by shadcn, shadcn-svelte, shadcn-vue.
  *
  * @param files The files of the component
  */
@@ -90,7 +91,7 @@ data class ComponentWithContentsNewFiles(
      */
     @Serializable
     data class File(
-        val path: String = "", // `ui/...` (shadcn/shadcn-vue)
+        val path: String = "", // `ui/accordion.tsx` (shadcn) / `ui/accordion/Accordion.vue` (shadcn-vue)
         val content: String = "",
         val type: String, // `registry:ui` (shadcn/shadcn-vue) / `registry:file` (shadcn-svelte)
         val target: String = "" // `accordion/accordion-content.svelte` (shadcn-svelte)
@@ -103,6 +104,7 @@ data class ComponentWithContentsNewFiles(
 /**
  * A shadcn component in the registry, with the "old"
  * format of the `files` object.
+ * Used by shadcn-solid, solid-ui.
  *
  * @param files The files of the component
  */

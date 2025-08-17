@@ -25,6 +25,8 @@ open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, Soli
 
     override val configFile = "ui.config.json"
 
+    override fun getURLPathForRoot() = "registry/index.json"
+
     override fun getURLPathForComponent(componentName: String) = "registry/ui/$componentName.json"
 
     override fun getLocalPathForComponents() = getLocalConfig().componentDir
@@ -52,11 +54,11 @@ open class SolidUISource(project: Project) : Source<SolidUIConfig>(project, Soli
     }
 
     override fun adaptFileExtensionToConfig(extension: String): String {
-        return if (!getLocalConfig().tsx) {
+        return if (getLocalConfig().tsx) extension else {
             extension
                 .replace(Regex("\\.tsx$"), ".ts")
                 .replace(Regex("\\.jsx$"), ".js")
-        } else extension
+        }
     }
 
     override fun adaptFileToConfig(file: PsiFile) {

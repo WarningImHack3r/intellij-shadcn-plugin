@@ -26,6 +26,8 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
 
     override var framework = "Vue"
 
+    override fun getURLPathForRoot() = "r/index.json"
+
     override fun getURLPathForComponent(componentName: String) =
         "r/styles/${getLocalConfig().style}/$componentName.json"
 

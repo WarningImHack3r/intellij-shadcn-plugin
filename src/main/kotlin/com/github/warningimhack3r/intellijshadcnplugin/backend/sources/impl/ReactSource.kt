@@ -24,6 +24,8 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
 
     override var framework = "React"
 
+    override fun getURLPathForRoot() = "r/index.json"
+
     override fun getURLPathForComponent(componentName: String) =
         "r/styles/${getLocalConfig().style}/$componentName.json"
 
