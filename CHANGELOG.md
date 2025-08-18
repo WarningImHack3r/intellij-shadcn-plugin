@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix compatibility with the newest versions of the registries and configuration files across all the implementations (#89)
+
 ## [0.9.4] - 2025-01-01
 
 ### Changed
