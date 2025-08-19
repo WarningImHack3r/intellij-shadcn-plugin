@@ -1,4 +1,4 @@
-rootProject.name = "intellij-shadcn-plugin"
+rootProject.name = "shadcnui Components Manager"
 
 plugins {
     id("org.gradle.toolchains.foojay-resolver-convention") version "1.0.0"
