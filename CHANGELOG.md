@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.9.5] - 2025-08-19
+
 ### Fixed
 
 - Fix compatibility with the newest versions of the registries and configuration files across all the implementations (#89)
@@ -173,7 +175,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.5...HEAD
+[0.9.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.1...v0.9.2
