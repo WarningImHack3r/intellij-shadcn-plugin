@@ -22,7 +22,10 @@ object SourceScanner {
                 schema.contains("ui.shadcn.com") -> ReactSource(project)
                 schema.contains("shadcn-vue.com") || contents?.keys?.contains("framework") == true -> VueSource(project)
                 schema.contains("shadcn-solid") || schema.contains("solid-ui.com") -> SolidSource(project)
-                else -> null
+                else -> {
+                    log.warn("Found a shadcn implementation but cannot figure out which, unrecognized schema: $schema")
+                    null
+                }
             }
         } ?: fileManager.getFileContentsAtPath("ui.config.json")?.let {
             SolidUISource(project)

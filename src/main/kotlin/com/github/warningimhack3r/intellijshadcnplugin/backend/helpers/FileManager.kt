@@ -58,22 +58,22 @@ class FileManager(private val project: Project) {
         return (if (name.startsWith('.')) {
             log.debug("Using workaround to find files named $name")
             // For some reason, dotfiles/folders don't show up with
-            // a simple call to FilenameIndex.getVirtualFilesByName.
+            // a simple call to [FilenameIndex.getVirtualFilesByName].
             // This is a dirty workaround to make it work on production,
             // because it works fine during local development.
             runReadAction {
                 FilenameIndex.getVirtualFilesByName(
-                    "package.json",
+                    "components.json",
+                    GlobalSearchScope.projectScope(project)
+                ) + FilenameIndex.getVirtualFilesByName(
+                    "ui.config.json",
                     GlobalSearchScope.projectScope(project)
                 )
-            }.firstOrNull().also {
-                if (it == null) {
-                    log.warn("package.json not found with the workaround")
-                }
-            }?.parent?.children?.filter {
+            }.flatMap { it.parent.children.toList() }.toSet().filter {
                 it.name.contains(name)
-            } ?: listOf<VirtualFile?>().also {
+            }.ifEmpty {
                 log.warn("No file named $name found with the workaround")
+                emptyList<VirtualFile>()
             }
         } else {
             runReadAction {

@@ -23,14 +23,15 @@ class ISPPanelPopulator(private val project: Project) {
         CoroutineScope(SupervisorJob() + Dispatchers.Default).async {
             return@async Pair(
                 SourceScanner.findShadcnImplementation(project),
-                FileManager.getInstance(project).getVirtualFilesByName("package.json").size
+                FileManager.getInstance(project).getVirtualFilesByName("components.json").size +
+                        FileManager.getInstance(project).getVirtualFilesByName("ui.config.json").size
             )
-        }.asCompletableFuture().thenApplyAsync { (source, packageJsonCount) ->
-            log.info("Shadcn implementation detected: $source, package.json count: $packageJsonCount")
+        }.asCompletableFuture().thenApplyAsync { (source, implementationsCount) ->
+            log.info("Shadcn implementation detected: $source, implementations count: $implementationsCount")
             panel.removeAll()
             if (source == null) {
                 panel.add(JBLabel("No shadcn/ui implementation detected.", SwingConstants.CENTER))
-            } else if (packageJsonCount > 1) {
+            } else if (implementationsCount > 1) {
                 panel.add(JBLabel("Multiple projects detected, not supported yet.", SwingConstants.CENTER))
             } else {
                 panel.add(ISPWindowContents(source).panel())
