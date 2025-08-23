@@ -56,7 +56,15 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
         val tsConfigLocation = if (config.typescript) "tsconfig.json" else "jsconfig.json"
         val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(tsConfigLocation)
             ?: throw NoSuchFileException("$tsConfigLocation not found")
-        val aliasPath = (resolvePath(tsConfig, tsConfigLocation) ?: if (config.typescript) {
+        val aliasPath = resolvePath(tsConfig, tsConfigLocation) ?: run {
+            val parentTsConfigLocation =
+                parseTsConfig(tsConfig, tsConfigLocation) // parsing twice the same file but whatever
+                    .asJsonObject?.get("extends")?.asJsonPrimitive?.content?.removePrefix("./")
+                    ?: return@run null
+            val tsConfigApp = FileManager.getInstance(project).getFileContentsAtPath(parentTsConfigLocation)
+                ?: throw NoSuchFileException("$parentTsConfigLocation not found")
+            resolvePath(tsConfigApp, parentTsConfigLocation)
+        } ?: (if (config.typescript) {
             val tsConfigAppLocation = "tsconfig.app.json"
             val tsConfigApp = FileManager.getInstance(project).getFileContentsAtPath(tsConfigAppLocation)
                 ?: throw NoSuchFileException("$tsConfigAppLocation not found")

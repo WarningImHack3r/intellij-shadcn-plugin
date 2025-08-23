@@ -16,6 +16,7 @@
 
 - Fix components installation/update for React, Svelte & Vue crashing (0.9.5 regression)
 - Improve management of components' required dependencies
+- [Vue] Improve `tsconfig.json`/`jsconfig.json` resolution
 
 ## [0.9.5] - 2025-08-19
 
