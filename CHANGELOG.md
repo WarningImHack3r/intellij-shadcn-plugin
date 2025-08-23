@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.9.6] - 2025-08-23
+
 ### Fixed
 
 - Fix components installation/update for React, Svelte & Vue crashing (0.9.5 regression)
@@ -182,7 +184,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.5...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.6...HEAD
+[0.9.6]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.2...v0.9.3
