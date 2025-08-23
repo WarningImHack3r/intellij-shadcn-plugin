@@ -12,11 +12,16 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- Fix components installation/update for React, Svelte & Vue crashing (0.9.5 regression)
+- Improve management of components' required dependencies
+
 ## [0.9.5] - 2025-08-19
 
 ### Fixed
 
-- Fix compatibility with the newest versions of the registries and configuration files across all the implementations (#89)
+- Fix compatibility with the newest versions of the registries and configuration files across all the implementations (#79, #85, #87)
 
 ## [0.9.4] - 2025-01-01
 

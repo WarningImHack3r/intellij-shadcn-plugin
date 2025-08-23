@@ -1,5 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import kotlinx.serialization.Serializable
 
 /**
@@ -19,4 +20,17 @@ data class Component(
     val dependencies: List<String> = emptyList(),
     val devDependencies: List<String> = emptyList(),
     val registryDependencies: List<String> = emptyList()
-)
+) {
+
+    /**
+     * Returns the [dependencies] without their version suffix
+     */
+    val cleanDependencies
+        get() = dependencies.map { DependencyManager.cleanDependency(it) }
+
+    /**
+     * Returns the [devDependencies] without their version suffix
+     */
+    val cleanDevDependencies
+        get() = devDependencies.map { DependencyManager.cleanDependency(it) }
+}

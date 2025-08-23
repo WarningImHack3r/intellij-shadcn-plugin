@@ -14,6 +14,11 @@ class DependencyManager(private val project: Project) {
 
         @JvmStatic
         fun getInstance(project: Project): DependencyManager = project.service()
+
+        /**
+         * Remove the hardcoded version from a dependency
+         */
+        fun cleanDependency(dependency: String) = dependency.replace(Regex("@\\W+?[\\w.-]+$"), "")
     }
 
     enum class InstallationType {
@@ -61,11 +66,9 @@ class DependencyManager(private val project: Project) {
             packageManager.getInstallCommand(),
             if (installationType == InstallationType.DEV) "-D" else null,
             *dependenciesNames.let { dependencies ->
-                // remove hardcoded versions
-                val deps = dependencies.map { it.replace(Regex("@\\W+?[\\w.-]+$"), "") }
                 if (packageManager in listOf(PackageManager.DENO)) {
-                    deps.map { "npm:$it" }
-                } else deps
+                    dependencies.map { "npm:$it" }
+                } else dependencies
             }.toTypedArray()
         ).toTypedArray()
         // check if the installation was successful

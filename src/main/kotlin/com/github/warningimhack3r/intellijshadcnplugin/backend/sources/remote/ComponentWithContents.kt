@@ -2,6 +2,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonArray
 import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
+import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonContentPolymorphicSerializer
@@ -37,9 +38,21 @@ sealed class ComponentWithContents {
     abstract val dependencies: List<String>
 
     /**
+     * Returns the [dependencies] without their version suffix
+     */
+    val cleanDependencies
+        get() = dependencies.map { DependencyManager.cleanDependency(it) }
+
+    /**
      * The npm devDependencies of the component.
      */
     abstract val devDependencies: List<String>
+
+    /**
+     * Returns the [devDependencies] without their version suffix
+     */
+    val cleanDevDependencies
+        get() = devDependencies.map { DependencyManager.cleanDependency(it) }
 
     /**
      * The other components that this component depends on.
