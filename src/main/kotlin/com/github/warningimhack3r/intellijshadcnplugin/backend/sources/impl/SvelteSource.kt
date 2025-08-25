@@ -29,12 +29,14 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
         private var isJsUnsupportedNotified = false
     }
 
+    override val domain: String
+        get() = getLocalConfig().registry
+
     override var framework = "Svelte"
 
-    override fun getURLPathForRoot() = "registry/index.json"
+    override fun getURLPathForRoot() = "/index.json"
 
-    override fun getURLPathForComponent(componentName: String) =
-        "registry/$componentName.json"
+    override fun getURLPathForComponent(componentName: String) = "/$componentName.json"
 
     override fun usesDirectoriesForComponents() = true
 
@@ -115,15 +117,20 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
         val importsPackagesReplacementVisitor = ImportsPackagesReplacementVisitor(project)
         runReadAction { file.accept(importsPackagesReplacementVisitor) }
         importsPackagesReplacementVisitor.replaceImports { `package` ->
-            `package`
-                .replace(Regex("^\\\$lib/registry/[^/]+"), escapeRegexValue(config.aliases.components))
-                .replace($$"$lib/utils", config.aliases.utils)
+            var renamedPackage = `package`
+            SvelteConfig.Aliases.Alias.entries.forEach { alias ->
+                renamedPackage = renamedPackage.replace(
+                    alias.placeholder,
+                    config.aliases.fromRaw(alias.slotName).orEmpty()
+                )
+            }
+            renamedPackage
         }
     }
 
     override fun fetchColors(): JsonElement {
-        val baseColor = getLocalConfig().tailwind.baseColor
-        return RequestSender.sendRequest("$domain/registry/colors/$baseColor.json").ok {
+        val config = getLocalConfig()
+        return RequestSender.sendRequest("${config.registry}/colors/${config.tailwind.baseColor}.json").ok {
             Json.parseToJsonElement(it.body)
         } ?: throw Exception("Colors not found")
     }

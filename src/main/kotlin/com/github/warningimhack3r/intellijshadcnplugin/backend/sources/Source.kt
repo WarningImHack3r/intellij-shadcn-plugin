@@ -39,7 +39,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     private val log = logger<Source<C>>()
     private var config: C? = null
 
-    protected val domain: String
+    protected open val domain: String
         get() = URI(getLocalConfig().`$schema`).let { uri ->
             "${uri.scheme}://${uri.host}".also {
                 log.debug("Parsed domain: $it")

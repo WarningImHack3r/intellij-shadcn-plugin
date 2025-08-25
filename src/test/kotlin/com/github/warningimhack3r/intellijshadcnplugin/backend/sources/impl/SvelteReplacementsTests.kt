@@ -14,8 +14,11 @@ class SvelteReplacementsTests : ReplacementsTests() {
                 baseColor = "slate"
             ),
             aliases = SvelteConfig.Aliases(
-                components = $$"$lib/components",
-                utils = $$"$lib/replacedUtils"
+                components = $$"$lib/replacedComponents",
+                utils = $$"$lib/replacedUtils",
+                ui = $$"$lib/components/replacedUi",
+                hooks = $$"$lib/replacedHooks",
+                lib = $$"$replacedLib",
             )
         )
 
@@ -36,24 +39,20 @@ class SvelteReplacementsTests : ReplacementsTests() {
         )
     }
 
-    fun testImportMatchingComponentsAlias() {
-        compareImports($$"$lib/components/foo", $$"$lib/registry/default/foo")
+    fun testImportMatchingAlias() {
+        compareImports($$"$lib/replacedComponents", $$"$COMPONENTS$")
     }
 
-    fun testImportNotMatchingComponentAlias1() {
-        compareImports($$"$lib/components", $$"$lib/registry/foo")
+    fun testImportContainingAlias() {
+        compareImports($$"$lib/replacedHooks/myHook", $$"$HOOKS$/myHook")
     }
 
-    fun testImportNotMatchingComponentAlias2() {
-        compareImports($$"$lib/notregistry/something/foo", $$"$lib/notregistry/something/foo")
+    fun testImportMatchingAnywhere() {
+        compareImports($$"something/$replacedLib", $$"something/$LIB$")
     }
 
-    fun testImportMatchingUtilsAlias() {
-        compareImports($$"$lib/replacedUtils", $$"$lib/utils")
-    }
-
-    fun testImportMatchingUtilsAlias2() {
-        compareImports($$"$lib/replacedUtils.js", $$"$lib/utils.js")
+    fun testImportNotMatchingWrongCase() {
+        compareImports($$"$ui$", $$"$ui$")
     }
 
     fun testImportNotMatchingUtilsAlias() {

@@ -12,6 +12,11 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [Svelte] Fix invalid imports for added or updated components
+- [Svelte] Add support for custom registry
+
 ## [0.9.6] - 2025-08-23
 
 ### Fixed

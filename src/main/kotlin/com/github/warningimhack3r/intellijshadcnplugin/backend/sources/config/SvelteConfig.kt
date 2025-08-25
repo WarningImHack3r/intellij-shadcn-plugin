@@ -21,7 +21,7 @@ sealed class SvelteConfig : Config() {
     /**
      * The schema URL for the file.
      */
-    override val `$schema`: String = "https://shadcn-svelte.com/schema.json"
+    override val `$schema` = "https://shadcn-svelte.com/schema.json"
 
     /**
      * The Tailwind configuration.
@@ -50,8 +50,38 @@ sealed class SvelteConfig : Config() {
     @Serializable
     data class Aliases(
         override val components: String,
-        override val utils: String
-    ) : Config.Aliases()
+        override val utils: String,
+        val ui: String = $$"$lib/components/ui",
+        val hooks: String = $$"$lib/hooks",
+        val lib: String = $$"$lib"
+    ) : Config.Aliases() {
+
+        fun fromRaw(raw: String) = when (raw.uppercase()) {
+            Alias.COMPONENTS.name -> components
+            Alias.UTILS.name -> utils
+            Alias.UI.name -> ui
+            Alias.HOOKS.name -> hooks
+            Alias.LIB.name -> lib
+            else -> null
+        }
+
+        enum class Alias {
+            COMPONENTS,
+            UI,
+            HOOKS,
+            UTILS,
+            LIB;
+
+            val slotName = name.lowercase()
+
+            val placeholder = "$$name$"
+        }
+    }
+
+    /**
+     * The registry to use for API calls
+     */
+    val registry = "https://shadcn-svelte.com/registry"
 }
 
 /**
