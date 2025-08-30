@@ -1,14 +1,17 @@
 # intellij-shadcn-plugin
 
-![Build](https://github.com/WarningImHack3r/intellij-shadcn-plugin/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/com.github.warningimhack3r.intellijshadcnplugin)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/com.github.warningimhack3r.intellijshadcnplugin)
+[![Build](https://github.com/WarningImHack3r/intellij-shadcn-plugin/workflows/Build/badge.svg)](https://github.com/WarningImHack3r/intellij-shadcn-plugin/actions)
+[![Version](https://img.shields.io/jetbrains/plugin/v/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/23479-shadcn-ui-components-manager)
+[![Downloads](https://img.shields.io/jetbrains/plugin/d/com.github.warningimhack3r.intellijshadcnplugin.svg)](https://plugins.jetbrains.com/plugin/23479-shadcn-ui-components-manager)
 
 ## 1.0.0 roadmap
 
-- Add support for Vue `typescript` option (transpiling TypeScript to JavaScript as well as in `*.vue` files)
-  - See https://github.com/radix-vue/shadcn-vue/issues/378
-- Add support for React/Solid (UI) `tsx` option (transpiling TypeScript to JavaScript)
+- Add support for Svelte/Vue's `typescript` option, as well as React/Solid's `tsx` option, by transpiling TypeScript
+  into JavaScript in `.svelte`, `.vue`, `.tsx`, and `.ts` files (#54)
+
+> [!NOTE]
+> shadcn 2.0 and 3.0 integrations would also be great for 1.0, but as they are not critical features, they could very
+> well be postponed.
 
 ## Description
 
