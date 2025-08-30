@@ -7,8 +7,8 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManag
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.RequestSender
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SolidConfig
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement.ImportsPackagesReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement.JSXClassReplacementVisitor
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
