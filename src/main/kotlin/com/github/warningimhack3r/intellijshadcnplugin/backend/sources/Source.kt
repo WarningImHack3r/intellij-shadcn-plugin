@@ -338,7 +338,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                         project, adaptFileExtensionToConfig(fileName), file.content
                     )
                     adaptFileToConfig(psiFile)
-                    (fileManager.getFileContentsAtPath("$componentPath/${fileName}") == runReadAction {
+                    (fileManager.getFileContentsAtPath("$componentPath/$fileName") == runReadAction {
                         psiFile.text
                     }).also {
                         log.debug("[NEW] File ${file.filePath} for ${remoteComponent.name} is ${if (it) "" else "NOT "}up to date")

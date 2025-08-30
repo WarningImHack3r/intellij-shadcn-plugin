@@ -16,7 +16,7 @@ class SolidReplacementsTests : ReplacementsTests() {
                 ),
                 color = "slate",
             ),
-            aliases = SolidConfig.Aliases(
+            aliases = SolidConfig.Alias(
                 components = "@/components",
                 utils = "@/lib/utils"
             )

@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- [Solid] Fix invalid aliases handling from the config
+
 ## [0.9.7] - 2025-08-25
 
 ### Fixed

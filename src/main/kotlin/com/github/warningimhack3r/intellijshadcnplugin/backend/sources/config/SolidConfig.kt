@@ -1,5 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -15,7 +16,8 @@ data class SolidConfig(
     override val `$schema`: String = "https://shadcn-solid.vercel.app/schema.json",
     override val tailwind: CssConfig? = null,
     val uno: CssConfig? = null,
-    override val aliases: Aliases
+    @SerialName("alias")
+    override val aliases: Alias
 ) : Config() {
 
     /**
@@ -50,9 +52,11 @@ data class SolidConfig(
      * @param ui The alias for the UI directory.
      */
     @Serializable
-    data class Aliases(
+    data class Alias(
+        @SerialName("component")
         override val components: String,
+        @SerialName("cn")
         override val utils: String,
         val ui: String? = null
-    ) : Config.Aliases()
+    ) : Aliases()
 }
