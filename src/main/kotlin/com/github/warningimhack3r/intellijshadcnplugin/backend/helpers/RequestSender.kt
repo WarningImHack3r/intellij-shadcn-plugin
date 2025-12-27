@@ -9,6 +9,9 @@ import java.net.http.HttpResponse
 
 object RequestSender {
     private val log = logger<RequestSender>()
+    private val httpClient = HttpClient.newBuilder()
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build()
 
     /**
      * Sends an HTTP request to the given [url], using the given HTTP [method]. The request can also
@@ -39,9 +42,7 @@ object RequestSender {
                 } else ""
             }${body?.take(100)}${if ((body?.length ?: 0) > 100) "..." else ""}"
         )
-        HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build()
+        httpClient
             .send(request, HttpResponse.BodyHandlers.ofString()).let { response ->
                 return Response(response.statusCode(), response.headers().map(), response.body()).also {
                     log.debug(
