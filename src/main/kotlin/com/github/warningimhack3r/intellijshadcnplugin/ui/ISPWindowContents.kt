@@ -78,7 +78,7 @@ class ISPWindowContents(private val source: Source<*>) {
                             installedComponents.contains(component.name)
                         )
                     }.also {
-                        log.info("Fetched and rendering ${it.size} remote components: ${it.joinToString(", ") { component -> component.title }}")
+                        log.info("Fetched and rendering ${it.size} remote component(s): ${it.joinToString(", ") { component -> component.title }}")
                     }
                 }.asCompletableFuture()
             }.apply {
@@ -131,7 +131,7 @@ class ISPWindowContents(private val source: Source<*>) {
                             )
                         )
                     }.also {
-                        log.info("Fetched and rendering ${it.size} installed components: ${it.joinToString(", ") { component -> component.title }}")
+                        log.info("Fetched and rendering ${it.size} installed component(s): ${it.joinToString(", ") { component -> component.title }}")
                     }
                 }.asCompletableFuture()
             }.apply {
@@ -202,7 +202,7 @@ class ISPWindowContents(private val source: Source<*>) {
             listContents()
                 .thenApplyAsync {
                     items = it
-                    log.info("Rendering ${it.size} items for panel $title")
+                    log.info("Rendering ${it.size} item(s) for panel \"$title\"")
                     titledBorder.title = "$title (${it.size})"
                     scrollPane = componentsList(items)
                     remove(spinner)

@@ -159,7 +159,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         return RequestSender.sendRequest("$domain/${getURLPathForRoot()}").ok {
             decodingJson.decodeFromString(ListSerializer(Component.serializer()), it.body)
         }?.also {
-            log.info("Fetched ${it.size} remote components: ${it.joinToString(", ") { component -> component.name }}")
+            log.info("Fetched ${it.size} remote component(s): ${it.joinToString(", ") { component -> component.name }}")
         } ?: emptyList<Component>().also {
             log.warn("Unable to fetch remote components")
         }
@@ -171,7 +171,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         )?.children?.map { file ->
             if (file.isDirectory) file.name else file.name.substringBeforeLast(".")
         }?.sorted()?.also {
-            log.info("Found ${it.size} installed components: ${it.joinToString(", ")}")
+            log.info("Found ${it.size} installed component(s): ${it.joinToString(", ")}")
         } ?: emptyList<String>().also {
             log.warn("Unable to find installed components")
         }
@@ -202,7 +202,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 } ?: emptyList()
                 if (remotelyDeletedFiles.isNotEmpty()) {
                     log.debug(
-                        "Source uses directories, attempting removing ${remotelyDeletedFiles.size} deleted files: ${
+                        "Source uses directories, attempting removing ${remotelyDeletedFiles.size} deleted file(s): ${
                             remotelyDeletedFiles.joinToString(
                                 ", "
                             )
