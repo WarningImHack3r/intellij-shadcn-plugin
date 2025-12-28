@@ -14,7 +14,12 @@
 
 ### Fixed
 
+- [Svelte/React] Fix "Manage components" panel loading forever and sometimes crashing on 2025.2+ (#96, #105)
 - [Solid] Fix invalid aliases handling from the config
+
+### Removed
+
+- Drop support for 2022.3, 2023 & 2024.1 IDEs (#105)
 
 ## [0.9.7] - 2025-08-25
 

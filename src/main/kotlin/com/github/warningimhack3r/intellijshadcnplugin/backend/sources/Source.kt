@@ -358,7 +358,6 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 }
             }
         }
-
     }
 
     fun removeComponent(componentName: String) {
