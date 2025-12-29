@@ -5,6 +5,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJson
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl.*
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import kotlinx.serialization.json.Json
@@ -13,7 +14,7 @@ object SourceScanner {
     val log = logger<SourceScanner>()
 
     fun findShadcnImplementation(project: Project): Source<*>? {
-        val fileManager = FileManager.getInstance(project)
+        val fileManager = project.service<FileManager>()
         return fileManager.getFileContentsAtPath("components.json")?.let { componentsJson ->
             val contents = Json.parseToJsonElement(componentsJson).asJsonObject
             val schema = contents?.get($$"$schema")?.asJsonPrimitive?.content ?: ""

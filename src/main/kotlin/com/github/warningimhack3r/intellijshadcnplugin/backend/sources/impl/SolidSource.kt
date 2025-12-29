@@ -10,6 +10,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.So
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.JSXClassReplacementVisitor
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -46,7 +47,7 @@ open class SolidSource(project: Project) : Source<SolidConfig>(project, SolidCon
             return alias
         }
         val configFile = "tsconfig.json"
-        val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(configFile)
+        val tsConfig = project.service<FileManager>().getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = parseTsConfig(tsConfig)
             .asJsonObject?.get("compilerOptions")

@@ -13,6 +13,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replaceme
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -41,7 +42,7 @@ open class ReactSource(project: Project) : Source<ReactConfig>(project, ReactCon
             return alias
         }
         val configFile = if (getLocalConfig().tsx) "tsconfig.json" else "jsconfig.json"
-        val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(configFile)
+        val tsConfig = project.service<FileManager>().getFileContentsAtPath(configFile)
             ?: throw NoSuchFileException("$configFile not found")
         val aliasPath = parseTsConfig(tsConfig)
             .asJsonObject?.get("compilerOptions")
