@@ -14,8 +14,10 @@
 
 ### Fixed
 
-- [Svelte/React] Fix "Manage components" panel loading forever and sometimes crashing on 2025.2+ (#96, #105)
+- [Svelte/React] Fix "Manage components" panel loading forever and Add component crashing on 2025.2+ (#96, #105)
 - [Solid] Fix invalid aliases handling from the config
+- Fix "command not found" errors on non-Windows systems
+- Refactor the command execution module to avoid false positives (successes when they actually failed)
 
 ### Removed
 
