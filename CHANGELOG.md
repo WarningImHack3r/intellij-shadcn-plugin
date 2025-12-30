@@ -12,6 +12,8 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-12-30
+
 ### Fixed
 
 - [Svelte/React] Fix "Manage components" panel loading forever and Add component crashing on 2025.2+ (#96, #105)
@@ -202,7 +204,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.7...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.7...v0.10.0
 [0.9.7]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.4...v0.9.5
