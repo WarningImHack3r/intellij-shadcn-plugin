@@ -15,7 +15,6 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replaceme
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -55,19 +54,19 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
 
         val config = getLocalConfig()
         val tsConfigLocation = if (config.typescript) "tsconfig.json" else "jsconfig.json"
-        val tsConfig = project.service<FileManager>().getFileContentsAtPath(tsConfigLocation)
+        val tsConfig = FileManager.getInstance(project).getFileContentsAtPath(tsConfigLocation)
             ?: throw NoSuchFileException("$tsConfigLocation not found")
         val aliasPath = resolvePath(tsConfig, tsConfigLocation) ?: run {
             val parentTsConfigLocation =
                 parseTsConfig(tsConfig, tsConfigLocation) // parsing twice the same file but whatever
                     .asJsonObject?.get("extends")?.asJsonPrimitive?.content?.removePrefix("./")
                     ?: return@run null
-            val tsConfigApp = project.service<FileManager>().getFileContentsAtPath(parentTsConfigLocation)
+            val tsConfigApp = FileManager.getInstance(project).getFileContentsAtPath(parentTsConfigLocation)
                 ?: throw NoSuchFileException("$parentTsConfigLocation not found")
             resolvePath(tsConfigApp, parentTsConfigLocation)
         } ?: (if (config.typescript) {
             val tsConfigAppLocation = "tsconfig.app.json"
-            val tsConfigApp = project.service<FileManager>().getFileContentsAtPath(tsConfigAppLocation)
+            val tsConfigApp = FileManager.getInstance(project).getFileContentsAtPath(tsConfigAppLocation)
                 ?: throw NoSuchFileException("$tsConfigAppLocation not found")
             resolvePath(tsConfigApp, tsConfigAppLocation)
         } else null) ?: throw Exception("Cannot find alias $alias in $tsConfig")

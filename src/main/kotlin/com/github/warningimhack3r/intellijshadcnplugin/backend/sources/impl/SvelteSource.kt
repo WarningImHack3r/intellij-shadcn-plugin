@@ -16,7 +16,6 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replaceme
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -46,8 +45,8 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
             log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
             return alias
         }
-        val fileManager = project.service<FileManager>()
-        val usesKit = project.service<DependencyManager>().isDependencyInstalled("@sveltejs/kit")
+        val fileManager = FileManager.getInstance(project)
+        val usesKit = DependencyManager.getInstance(project).isDependencyInstalled("@sveltejs/kit")
         val configFileName = if (usesKit) ".svelte-kit/tsconfig.json" else {
             with(getLocalConfig()) {
                 when (this) {
@@ -59,7 +58,7 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
         var tsConfig = fileManager.getFileContentsAtPath(configFileName)
         if (tsConfig == null) {
             if (!usesKit) throw NoSuchFileException("Cannot get $configFileName")
-            val res = project.service<ShellRunner>().execute(arrayOf("npx", "svelte-kit", "sync"))
+            val res = ShellRunner.getInstance(project).execute(arrayOf("npx", "svelte-kit", "sync"))
             if (res == null) {
                 NotificationManager(project).sendNotification(
                     "Failed to generate $configFileName",

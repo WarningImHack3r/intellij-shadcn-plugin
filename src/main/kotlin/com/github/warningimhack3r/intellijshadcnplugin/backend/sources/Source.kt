@@ -10,7 +10,6 @@ import com.github.warningimhack3r.intellijshadcnplugin.notifications.Notificatio
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
@@ -74,7 +73,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     protected open fun getLocalConfig(): C {
         return config?.also {
             log.debug("Returning cached config")
-        } ?: project.service<FileManager>().getFileContentsAtPath(configFile)?.let {
+        } ?: FileManager.getInstance(project).getFileContentsAtPath(configFile)?.let {
             log.debug("Parsing config from $configFile")
             try {
                 decodingJson.decodeFromString(serializer, it).also {
@@ -167,7 +166,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     }
 
     fun getInstalledComponents(): List<String> {
-        return project.service<FileManager>().getFileAtPath(
+        return FileManager.getInstance(project).getFileAtPath(
             "${resolveAlias(getLocalConfig().aliases.components)}/ui"
         )?.children?.map { file ->
             if (file.isDirectory) file.name else file.name.substringBeforeLast(".")
@@ -183,7 +182,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         // Install component
         val component = fetchComponent(componentName)
         val installedComponents = getInstalledComponents()
-        val fileManager = project.service<FileManager>()
+        val fileManager = FileManager.getInstance(project)
         val notifManager = NotificationManager(project)
         log.debug("Installing ${component.name} (installed: ${installedComponents.joinToString(", ")})")
         setOf(component, *getRegistryDependencies(component).filter {
@@ -264,7 +263,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
 
         // Install dependencies
-        val depsManager = project.service<DependencyManager>()
+        val depsManager = DependencyManager.getInstance(project)
         val depsToInstall = component.cleanDependencies.filter { dependency ->
             !depsManager.isDependencyInstalled(dependency)
         }
@@ -330,7 +329,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                     "/${remoteComponent.name}"
                 } else ""
             }"
-        val fileManager = project.service<FileManager>()
+        val fileManager = FileManager.getInstance(project)
         return with(remoteComponent) {
             when (this) {
                 is ComponentWithContentsNewFiles -> files.all { file ->
@@ -366,10 +365,10 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         val componentsDir =
             "${resolveAlias(getLocalConfig().aliases.components)}/${remoteComponent.type.substringAfterLast(":")}"
         if (usesDirectoriesForComponents()) {
-            project.service<FileManager>().deleteFileAtPath("$componentsDir/${remoteComponent.name}")
+            FileManager.getInstance(project).deleteFileAtPath("$componentsDir/${remoteComponent.name}")
         } else {
             remoteComponent.filePaths.forEach { file ->
-                project.service<FileManager>().deleteFileAtPath("$componentsDir/$file")
+                FileManager.getInstance(project).deleteFileAtPath("$componentsDir/$file")
             }
         }
         // Remove dependencies no longer needed by any component
@@ -382,7 +381,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
             } ?: emptyList()
         }.flatten().toSet()
         val uselessDependencies =
-            project.service<DependencyManager>().getInstalledDependencies().filter { dependency ->
+            DependencyManager.getInstance(project).getInstalledDependencies().filter { dependency ->
                 dependency in allPossiblyNeededDependencies && dependency !in currentlyNeededDependencies
             }
         if (uselessDependencies.isNotEmpty()) {
@@ -399,7 +398,7 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
                 listOf(
                     NotificationAction.createSimple("Remove") {
                         runAsync {
-                            project.service<DependencyManager>().uninstallDependencies(uselessDependencies)
+                            DependencyManager.getInstance(project).uninstallDependencies(uselessDependencies)
                         }.then { uninstallSuccess ->
                             if (uninstallSuccess) {
                                 log.info("Removed ${uselessDependencies.joinToString(", ")}")

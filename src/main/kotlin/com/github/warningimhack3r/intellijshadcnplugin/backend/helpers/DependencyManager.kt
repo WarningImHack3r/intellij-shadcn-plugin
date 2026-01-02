@@ -12,6 +12,9 @@ class DependencyManager(private val project: Project) {
     companion object {
         private val log = logger<DependencyManager>()
 
+        @JvmStatic
+        fun getInstance(project: Project): DependencyManager = project.service()
+
         /**
          * Remove the hardcoded version from a dependency
          */
@@ -45,7 +48,7 @@ class DependencyManager(private val project: Project) {
     }
 
     private fun getPackageManager(): PackageManager? {
-        val fileManager = project.service<FileManager>()
+        val fileManager = FileManager.getInstance(project)
         return PackageManager.entries.firstOrNull { packageManager ->
             packageManager.getLockFilesNames().any { lockFile ->
                 fileManager.getVirtualFilesByName(lockFile).isNotEmpty()
@@ -69,7 +72,7 @@ class DependencyManager(private val project: Project) {
             }.toTypedArray()
         ).toTypedArray()
         // check if the installation was successful
-        (project.service<ShellRunner>().execute(command) != null).also { success ->
+        (ShellRunner.getInstance(project).execute(command) != null).also { success ->
             if (!success) {
                 log.warn("Failed to install dependencies (${command.joinToString(" ")}).")
             }
@@ -84,7 +87,7 @@ class DependencyManager(private val project: Project) {
             *dependenciesNames.toTypedArray()
         ).toTypedArray()
         // check if the uninstallation was successful
-        (project.service<ShellRunner>().execute(command) != null).also { success ->
+        (ShellRunner.getInstance(project).execute(command) != null).also { success ->
             if (!success) {
                 log.warn("Failed to uninstall dependencies (${command.joinToString(" ")}).")
             }
@@ -92,7 +95,7 @@ class DependencyManager(private val project: Project) {
     } ?: throw IllegalStateException("No package manager found")
 
     fun getInstalledDependencies() =
-        project.service<FileManager>().getFileContentsAtPath("package.json")?.let { packageJson ->
+        FileManager.getInstance(project).getFileContentsAtPath("package.json")?.let { packageJson ->
             Json.parseToJsonElement(packageJson).asJsonObject?.filterKeys {
                 it == "dependencies" || it == "devDependencies"
             }?.values?.mapNotNull { it.asJsonObject?.keys }?.flatten()?.distinct()?.also {

@@ -2,7 +2,6 @@ package com.github.warningimhack3r.intellijshadcnplugin.ui
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.SourceScanner
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
-import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.logger
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBLabel
@@ -24,8 +23,8 @@ class ISPPanelPopulator(private val project: Project) {
         CoroutineScope(SupervisorJob() + Dispatchers.Default).async {
             return@async Pair(
                 SourceScanner.findShadcnImplementation(project),
-                project.service<FileManager>().getVirtualFilesByName("components.json").size +
-                        project.service<FileManager>().getVirtualFilesByName("ui.config.json").size
+                FileManager.getInstance(project).getVirtualFilesByName("components.json").size +
+                        FileManager.getInstance(project).getVirtualFilesByName("ui.config.json").size
             )
         }.asCompletableFuture().thenApplyAsync { (source, implementationsCount) ->
             log.info("Shadcn implementation detected: $source, implementations count: $implementationsCount")
