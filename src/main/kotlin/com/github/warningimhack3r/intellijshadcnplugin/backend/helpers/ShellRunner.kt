@@ -16,7 +16,7 @@ class ShellRunner(private val project: Project) {
     }
 
     private val isWindows by lazy {
-        System.getProperty("os.name").lowercase().contains("win")
+        System.getProperty("os.name").lowercase().contains("win", ignoreCase = true)
     }
 
     private fun getExecutionCommand(originalCommand: Array<String>, retry: Boolean = false): Array<String>? {
