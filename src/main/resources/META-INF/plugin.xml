@@ -5,10 +5,10 @@
     <vendor url="https://github.com/WarningImHack3r">WarningImHack3r</vendor>
 
     <depends>com.intellij.modules.platform</depends>
-    <depends optional="true" config-file="com.github.warningimhack3r.intellijshadcnplugin-withSvelte.xml">
+    <depends optional="true" config-file="withSvelte.xml">
         dev.blachut.svelte.lang
     </depends>
-    <depends optional="true" config-file="com.github.warningimhack3r.intellijshadcnplugin-withVue.xml">
+    <depends optional="true" config-file="withVue.xml">
         org.jetbrains.plugins.vue
     </depends>
 

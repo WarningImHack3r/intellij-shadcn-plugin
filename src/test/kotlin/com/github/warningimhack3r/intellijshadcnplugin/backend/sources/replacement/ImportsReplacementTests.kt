@@ -1,5 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
 
+import com.intellij.psi.PsiPlainTextFile
 import com.intellij.testFramework.TestDataPath
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 
@@ -10,6 +11,10 @@ class ImportsReplacementTests : BasePlatformTestCase() {
 
     private fun beforeAndAfterContents(fileName: String): Pair<String, String> {
         val file = myFixture.configureByFile(fileName)
+        if (file is PsiPlainTextFile) {
+            throw IllegalArgumentException("\"${file.name}\" is a plain text file; is the language supported?\nIf the language support comes from an external plugin, ensure it's properly installed and its mandatory dependencies are listed in your Bundled Plugins.")
+        }
+
         val visitor = ImportsPackagesReplacementVisitor(project)
         file.accept(visitor)
         visitor.replaceImports { "a-$it" }
