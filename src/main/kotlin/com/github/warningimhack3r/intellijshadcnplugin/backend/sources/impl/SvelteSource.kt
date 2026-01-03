@@ -12,7 +12,7 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Sv
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfigDeserializer
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfigTsBoolean
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.SvelteConfigTsObject
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement.ImportsPackagesReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
