@@ -3,6 +3,7 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.impl
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.VueConfig
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiPlainTextFile
 
 class VueReplacementsTests : ReplacementsTests() {
     private var useNotNullUI = false
@@ -25,6 +26,9 @@ class VueReplacementsTests : ReplacementsTests() {
         )
 
         public override fun adaptFileToConfig(file: PsiFile) {
+            if (file is PsiPlainTextFile) {
+                throw IllegalArgumentException("\"${file.name}\" is a plain text file; is the language supported?\nIf the language support comes from an external plugin, ensure it's properly installed and its mandatory dependencies are listed in your Bundled Plugins.")
+            }
             super.adaptFileToConfig(file)
         }
     }

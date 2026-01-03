@@ -9,6 +9,9 @@ import java.net.http.HttpResponse
 
 object RequestSender {
     private val log = logger<RequestSender>()
+    private val httpClient = HttpClient.newBuilder()
+        .followRedirects(HttpClient.Redirect.NORMAL)
+        .build()
 
     /**
      * Sends an HTTP request to the given [url], using the given HTTP [method]. The request can also
@@ -39,23 +42,21 @@ object RequestSender {
                 } else ""
             }${body?.take(100)}${if ((body?.length ?: 0) > 100) "..." else ""}"
         )
-        HttpClient.newBuilder()
-            .followRedirects(HttpClient.Redirect.NORMAL)
-            .build()
+        httpClient
             .send(request, HttpResponse.BodyHandlers.ofString()).let { response ->
                 return Response(response.statusCode(), response.headers().map(), response.body()).also {
                     log.debug(
-                        "Request to $url returned ${it.statusCode} (${it.body.length} bytes):${
-                            if (it.body.isNotEmpty()) {
-                                "\n"
-                            } else ""
+                        "Request to $url returned ${it.statusCode} (${it.body.length} bytes)${
+                            if (it.body.isEmpty()) "" else ":\n"
                         }${it.body.take(100)}${if (it.body.length > 100) "..." else ""}"
                     )
                 }
             }
     }
 
-    data class Response(val statusCode: Int, val headers: Map<String, List<String>>, val body: String) {
+    data class Response(val statusCode: Int, val headers: Map<String, List<String>>, val rawBody: String?) {
+        val body: String
+            get() = rawBody ?: ""
 
         fun <T> ok(action: (Response) -> T): T? {
             if (statusCode in 200..299) {

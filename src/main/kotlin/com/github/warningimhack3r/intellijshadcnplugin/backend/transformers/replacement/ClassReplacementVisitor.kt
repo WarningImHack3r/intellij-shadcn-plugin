@@ -1,10 +1,8 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
-import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.psi.JSProperty
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
-import com.intellij.lang.typescript.TypeScriptStubElementTypes
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
@@ -13,6 +11,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
+import com.intellij.psi.tree.IElementType
 import com.intellij.psi.xml.XmlTokenType
 
 abstract class ClassReplacementVisitor(project: Project) : PsiRecursiveElementVisitor() {
@@ -25,13 +24,37 @@ abstract class ClassReplacementVisitor(project: Project) : PsiRecursiveElementVi
     private val attributeValueTokenPattern: PsiElementPattern.Capture<PsiElement> =
         PlatformPatterns.psiElement(XmlTokenType.XML_ATTRIBUTE_VALUE_TOKEN)
     private val jsLiteralExpressionPattern: PsiElementPattern.Capture<PsiElement> =
-        PlatformPatterns.psiElement(JSStubElementTypes.LITERAL_EXPRESSION)
+        PlatformPatterns.psiElement(
+            VisitorHelpers.loadStaticFieldWithFallbacks<IElementType>(
+                "LITERAL_EXPRESSION",
+                $$"com.intellij.lang.javascript.JSElementTypes$Companion", // 2025.2+
+                "com.intellij.lang.javascript.JSElementTypes"
+            ) ?: throw IllegalArgumentException("Import failed for LITERAL_EXPRESSION")
+        )
     private val jsCallExpressionPattern: PsiElementPattern.Capture<PsiElement> =
-        PlatformPatterns.psiElement(JSStubElementTypes.CALL_EXPRESSION)
+        PlatformPatterns.psiElement(
+            VisitorHelpers.loadStaticFieldWithFallbacks<IElementType>(
+                "CALL_EXPRESSION",
+                $$"com.intellij.lang.javascript.JSElementTypes$Companion", // 2025.2+
+                "com.intellij.lang.javascript.JSElementTypes"
+            ) ?: throw IllegalArgumentException("Import failed for CALL_EXPRESSION")
+        )
     private val jsOrTsVariablePattern: PsiElementPattern.Capture<PsiElement> =
         PlatformPatterns.psiElement().andOr(
-            PlatformPatterns.psiElement(TypeScriptStubElementTypes.TYPESCRIPT_VARIABLE),
-            PlatformPatterns.psiElement(JSStubElementTypes.VARIABLE)
+            PlatformPatterns.psiElement(
+                VisitorHelpers.loadStaticFieldWithFallbacks<IElementType>(
+                    "TYPESCRIPT_VARIABLE",
+                    $$"com.intellij.lang.typescript.TypeScriptElementTypes$Companion", // 2025.2+
+                    "com.intellij.lang.typescript.TypeScriptElementTypes"
+                ) ?: throw IllegalArgumentException("Import failed for TYPESCRIPT_VARIABLE")
+            ),
+            PlatformPatterns.psiElement(
+                VisitorHelpers.loadStaticFieldWithFallbacks<IElementType>(
+                    "VARIABLE",
+                    $$"com.intellij.lang.javascript.JSElementTypes$Companion", // 2025.2+
+                    "com.intellij.lang.javascript.JSElementTypes"
+                ) ?: throw IllegalArgumentException("Import failed for VARIABLE")
+            )
         )
 
     abstract fun classAttributeNameFromElement(element: PsiElement): String?
@@ -44,7 +67,12 @@ abstract class ClassReplacementVisitor(project: Project) : PsiRecursiveElementVi
     }
 
     private fun saveMatchingElement(psiElement: PsiElement) {
-        matchingElements.add(smartPointerManager.createSmartPsiElementPointer(psiElement, psiElement.containingFile))
+        matchingElements.add(
+            smartPointerManager.createSmartPsiElementPointer(
+                psiElement,
+                psiElement.containingFile
+            )
+        )
     }
 
     override fun visitElement(element: PsiElement) {

@@ -1,7 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
-import com.intellij.lang.ecmascript6.ES6StubElementTypes
 import com.intellij.lang.javascript.JSTokenTypes
 import com.intellij.lang.javascript.psi.impl.JSPsiElementFactory
 import com.intellij.openapi.application.runReadAction
@@ -11,19 +10,32 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiRecursiveElementVisitor
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
+import com.intellij.psi.tree.IElementType
 
 class ImportsPackagesReplacementVisitor(project: Project) : PsiRecursiveElementVisitor() {
     private val matchingElements = mutableListOf<SmartPsiElementPointer<PsiElement>>()
     private val smartPointerManager = SmartPointerManager.getInstance(project)
+    private val fromStringPattern = PlatformPatterns.psiElement(JSTokenTypes.STRING_LITERAL)
+        .withParent(
+            PlatformPatterns.psiElement(
+                VisitorHelpers.loadStaticFieldWithFallbacks<IElementType>(
+                    "FROM_CLAUSE",
+                    "com.intellij.lang.javascript.JSElementTypes", // 2025.2+
+                    "com.intellij.lang.ecmascript6.ES6StubElementTypes"
+                ) ?: throw IllegalArgumentException("Import failed for FROM_CLAUSE")
+            )
+        )
 
     override fun visitElement(element: PsiElement) {
         super.visitElement(element)
 
-        if (PlatformPatterns.psiElement(JSTokenTypes.STRING_LITERAL)
-                .withParent(PlatformPatterns.psiElement(ES6StubElementTypes.FROM_CLAUSE))
-                .accepts(element)
-        ) {
-            matchingElements.add(smartPointerManager.createSmartPsiElementPointer(element, element.containingFile))
+        if (fromStringPattern.accepts(element)) {
+            matchingElements.add(
+                smartPointerManager.createSmartPsiElementPointer(
+                    element,
+                    element.containingFile
+                )
+            )
         }
     }
 

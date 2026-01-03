@@ -2,12 +2,12 @@ package com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.rep
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.intellij.lang.javascript.JSElementTypes
-import com.intellij.lang.javascript.JSStubElementTypes
 import com.intellij.lang.javascript.JSTokenTypes
 import com.intellij.openapi.application.runReadAction
 import com.intellij.openapi.project.Project
 import com.intellij.patterns.PlatformPatterns
 import com.intellij.psi.*
+import com.intellij.psi.tree.IElementType
 
 class ReactDirectiveRemovalVisitor(
     project: Project,
@@ -22,6 +22,18 @@ class ReactDirectiveRemovalVisitor(
         // TODO: Find a way to remove newlines?
     )
 
+    // TODO: ExpressionStatement.directive?
+    private val directive = PlatformPatterns.psiElement(JSElementTypes.EXPRESSION_STATEMENT)
+        .withChild(
+            PlatformPatterns.psiElement(
+                VisitorHelpers.loadStaticFieldWithFallbacks<IElementType>(
+                    "LITERAL_EXPRESSION",
+                    $$"com.intellij.lang.javascript.JSElementTypes$Companion", // 2025.2+
+                    "com.intellij.lang.javascript.JSElementTypes"
+                ) ?: throw IllegalArgumentException("Import failed for LITERAL_EXPRESSION")
+            )
+        )
+
     private var directiveFound = false
     private var done = false
 
@@ -29,10 +41,7 @@ class ReactDirectiveRemovalVisitor(
         super.visitElement(element)
 
         if (!done) {
-            // TODO: ExpressionStatement.directive?
-            val isDirectiveCandidate = PlatformPatterns.psiElement(JSElementTypes.EXPRESSION_STATEMENT)
-                .withChild(PlatformPatterns.psiElement(JSStubElementTypes.LITERAL_EXPRESSION))
-                .accepts(element)
+            val isDirectiveCandidate = directive.accepts(element)
             val isJunk = elementsToRemove.accepts(element)
 
             if (!directiveFound && isDirectiveCandidate && directiveValue(

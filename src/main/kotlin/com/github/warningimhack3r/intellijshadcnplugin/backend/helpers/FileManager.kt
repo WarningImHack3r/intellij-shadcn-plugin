@@ -56,7 +56,7 @@ class FileManager(private val project: Project) {
 
     fun getVirtualFilesByName(name: String): Collection<VirtualFile> {
         return (if (name.startsWith('.')) {
-            log.debug("Using workaround to find files named $name")
+            log.debug("Using dotfiles method to find files named $name")
             // For some reason, dotfiles/folders don't show up with
             // a simple call to [FilenameIndex.getVirtualFilesByName].
             // This is a dirty workaround to make it work on production,
@@ -89,7 +89,7 @@ class FileManager(private val project: Project) {
         }.sortedBy { file ->
             name.toRegex().find(file.path)?.range?.first ?: Int.MAX_VALUE
         }.also {
-            log.debug("Found ${it.size} files named $name: ${it.toList()}")
+            log.debug("Found ${it.size} file(s) named $name: $it")
         }
     }
 

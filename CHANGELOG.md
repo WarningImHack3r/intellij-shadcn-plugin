@@ -12,9 +12,18 @@
 
 ## [Unreleased]
 
+## [0.10.0] - 2025-12-30
+
 ### Fixed
 
+- [Svelte/React] Fix "Manage components" panel loading forever and Add component crashing on 2025.2+ (#96, #105)
 - [Solid] Fix invalid aliases handling from the config
+- Fix "command not found" errors on non-Windows systems
+- Refactor the command execution module to avoid false positives (successes when they actually failed)
+
+### Removed
+
+- Drop support for 2022.3, 2023 & 2024.1 IDEs (#105)
 
 ## [0.9.7] - 2025-08-25
 
@@ -195,7 +204,8 @@
 
 - Initial release
 
-[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.7...HEAD
+[Unreleased]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/0.10.0...HEAD
+[0.10.0]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.7...0.10.0
 [0.9.7]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/WarningImHack3r/intellij-shadcn-plugin/compare/v0.9.4...v0.9.5
