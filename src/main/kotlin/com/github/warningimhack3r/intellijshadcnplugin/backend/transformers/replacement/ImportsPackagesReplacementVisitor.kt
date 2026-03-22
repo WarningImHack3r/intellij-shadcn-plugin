@@ -1,4 +1,4 @@
-package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
+package com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
 import com.intellij.lang.javascript.JSTokenTypes

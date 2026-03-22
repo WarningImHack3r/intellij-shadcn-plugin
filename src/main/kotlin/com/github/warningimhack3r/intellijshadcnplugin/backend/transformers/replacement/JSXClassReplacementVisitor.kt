@@ -1,4 +1,4 @@
-package com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement
+package com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement
 
 import com.intellij.lang.javascript.psi.e4x.impl.JSXmlAttributeImpl
 import com.intellij.openapi.project.Project

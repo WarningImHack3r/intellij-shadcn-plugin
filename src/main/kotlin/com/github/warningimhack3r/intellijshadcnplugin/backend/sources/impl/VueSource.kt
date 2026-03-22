@@ -10,8 +10,8 @@ import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.config.Vu
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContents
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContentsLegacyFiles
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.remote.ComponentWithContentsNewFiles
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.ImportsPackagesReplacementVisitor
-import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.replacement.VueClassReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement.ImportsPackagesReplacementVisitor
+import com.github.warningimhack3r.intellijshadcnplugin.backend.transformers.replacement.VueClassReplacementVisitor
 import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.application.runReadAction
