@@ -72,14 +72,27 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
                 fileManager.getFileContentsAtPath(configFileName)
                     ?: throw NoSuchFileException("Cannot get $configFileName after sync")
         }
-        val aliasPath = parseTsConfig(tsConfig)
+        // Handle scoped package aliases (e.g. @repo/ui/components).
+        // For @-prefixed aliases, the package name includes a slash (@scope/name),
+        // so we split into at most 3 parts to correctly separate the prefix from the rest.
+        val (aliasPrefix, suffix) = if (alias.startsWith("@")) {
+            val parts = alias.split("/", limit = 3)
+            val prefix = if (parts.size >= 2) "${parts[0]}/${parts[1]}" else alias
+            val rest = if (parts.size >= 3) parts[2] else ""
+            prefix to rest
+        } else {
+            alias.substringBefore("/") to alias.substringAfter("/", "")
+        }
+
+        val paths = parseTsConfig(tsConfig)
             .asJsonObject?.get("compilerOptions")
             ?.asJsonObject?.get("paths")
-            ?.asJsonObject?.get(alias.substringBefore("/"))
+
+        val aliasPath = (paths?.asJsonObject?.get(aliasPrefix)
+            ?: paths?.asJsonObject?.get("$aliasPrefix/*"))
             ?.asJsonArray?.get(0)
             ?.asJsonPrimitive?.content ?: throw Exception("Cannot find alias $alias in $tsConfig")
-        val normalized = aliasPath.replace(Regex("^\\.+/"), "")
-        val suffix = alias.substringAfter("/", "")
+        val normalized = aliasPath.replace(Regex("^\\.+/"), "").removeSuffix("/*")
         val resolved = if (suffix.isEmpty()) normalized else "$normalized/$suffix"
         return resolved.also { log.debug("Resolved alias $alias to $it") }
     }
