@@ -27,6 +27,8 @@
     </projectListeners>
 
     <extensions defaultExtensionNs="com.intellij">
+        <iconMapper
+                mappingFile="shadcnuiComponentsManagerIconMappings.json" />
         <toolWindow
                 id="shadcn/ui"
                 icon="/icons/shadcn.svg"
