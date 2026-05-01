@@ -6,8 +6,8 @@ serialization = "1.11.0"
 
 # plugins
 changelog = "2.5.0"
-intellijPlatform = "2.14.0"
-kotlin = "2.3.20"
+intellijPlatform = "2.16.0"
+kotlin = "2.3.21"
 kover = "0.9.8"
 qodana = "2026.1.0"
 
