@@ -1,5 +1,6 @@
 package com.github.warningimhack3r.intellijshadcnplugin.backend.sources
 
+import com.github.warningimhack3r.intellijshadcnplugin.backend.extensions.asJsonObject
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.DependencyManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.FileManager
 import com.github.warningimhack3r.intellijshadcnplugin.backend.helpers.PsiHelper
@@ -17,6 +18,8 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import org.jetbrains.concurrency.runAsync
 import java.net.URI
 import java.nio.file.NoSuchFileException
@@ -33,6 +36,41 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
         val decodingJson = Json {
             ignoreUnknownKeys = true
+        }
+
+        /**
+         * Resolves a `#` alias against the `imports` field of a package.json,
+         * following Node's subpath imports matching: an exact key first, then
+         * the single-`*` pattern with the longest prefix.
+         *
+         * Array fallbacks and nested conditions are not supported.
+         *
+         * @param packageJson The package.json contents
+         * @param alias The alias to resolve, starting with `#`
+         * @return The project-relative path, or null if it cannot be resolved
+         */
+        fun resolveSubpathImport(packageJson: String, alias: String): String? {
+            val imports = Json.parseToJsonElement(packageJson)
+                .asJsonObject?.get("imports")?.asJsonObject ?: return null
+            fun JsonElement.asString() = (this as? JsonPrimitive)?.takeIf { it.isString }?.content
+            fun JsonElement.pickTarget() = asString() ?: (this as? JsonObject)?.let { conditions ->
+                conditions["default"]?.asString()
+                    ?: conditions["import"]?.asString()
+                    ?: conditions.values.firstNotNullOfOrNull { it.asString() }
+            }
+
+            // Pick the matching key first: an unusable target (null, array) blocks the alias, like in Node
+            imports[alias]?.let { return it.pickTarget()?.removePrefix("./") }
+            val key = imports.keys
+                .filter { key ->
+                    val prefix = key.substringBefore("*")
+                    val suffix = key.substringAfter("*")
+                    key.count { it == '*' } == 1 && alias != prefix && alias.length >= key.length - 1
+                            && alias.startsWith(prefix) && alias.endsWith(suffix)
+                }
+                .maxWithOrNull(compareBy({ it.substringBefore("*").length }, { it.length })) ?: return null
+            val match = alias.substring(key.substringBefore("*").length, alias.length - key.substringAfter("*").length)
+            return imports.getValue(key).pickTarget()?.replace("*", match)?.removePrefix("./")
         }
     }
 
@@ -93,6 +131,18 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     protected abstract fun usesDirectoriesForComponents(): Boolean
 
     protected abstract fun resolveAlias(alias: String): String
+
+    /**
+     * Resolves a `#` alias using the project's root package.json `imports` field.
+     *
+     * @throws Exception If package.json is missing or the alias cannot be resolved
+     */
+    protected fun resolveSubpathImport(alias: String): String {
+        val packageJson = FileManager.getInstance(project).getFileContentsAtPath("package.json")
+        return packageJson?.let { resolveSubpathImport(it, alias) }?.also {
+            log.debug("Resolved subpath import $alias to $it")
+        } ?: throw Exception("Cannot find alias $alias in package.json")
+    }
 
     /**
      * Escapes the value if it starts with a $. MUST be used when [String.replace]

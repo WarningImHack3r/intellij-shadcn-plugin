@@ -41,6 +41,7 @@ open class SvelteSource(project: Project) : Source<SvelteConfig>(project, Svelte
     override fun usesDirectoriesForComponents() = true
 
     override fun resolveAlias(alias: String): String {
+        if (alias.startsWith("#")) return resolveSubpathImport(alias)
         if (!alias.startsWith("$") && !alias.startsWith("@") && !alias.startsWith("~")) {
             log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
             return alias
