@@ -39,11 +39,20 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         }
 
         /**
+         * Conditions active when the installed components are imported as ESM through Vite,
+         * in both client and SSR builds (`svelte` is added by vite-plugin-svelte).
+         * Environment-specific ones (`browser`, `node`, `development`, `production`) are left out
+         * since components are imported on both sides.
+         */
+        private val IMPORT_CONDITIONS = setOf("import", "module", "svelte", "default")
+
+        /**
          * Resolves a `#` alias against the `imports` field of a package.json,
          * following Node's subpath imports matching: an exact key first, then
          * the single-`*` pattern with the longest prefix.
          *
-         * Array fallbacks and nested conditions are not supported.
+         * Conditional targets are matched like Node does: the first key, in object order,
+         * that is one of [IMPORT_CONDITIONS] wins. Array fallbacks are not supported.
          *
          * @param packageJson The package.json contents
          * @param alias The alias to resolve, starting with `#`
@@ -52,12 +61,16 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
         fun resolveSubpathImport(packageJson: String, alias: String): String? {
             val imports = Json.parseToJsonElement(packageJson)
                 .asJsonObject?.get("imports")?.asJsonObject ?: return null
-            fun JsonElement.asString() = (this as? JsonPrimitive)?.takeIf { it.isString }?.content
-            fun JsonElement.pickTarget() = asString() ?: (this as? JsonObject)?.let { conditions ->
-                conditions["default"]?.asString()
-                    ?: conditions["import"]?.asString()
-                    ?: conditions.values.firstNotNullOfOrNull { it.asString() }
+            // Returns the matched leaf, or Kotlin null if no condition applies so Node moves on to the next one.
+            // A JsonNull or array leaf is a match too: it blocks the alias instead of falling through.
+            fun JsonElement.pickLeaf(): JsonElement? = when (this) {
+                is JsonObject -> entries.firstNotNullOfOrNull { (condition, target) ->
+                    target.takeIf { condition in IMPORT_CONDITIONS }?.pickLeaf()
+                }
+
+                else -> this
             }
+            fun JsonElement.pickTarget() = (pickLeaf() as? JsonPrimitive)?.takeIf { it.isString }?.content
 
             // Pick the matching key first: an unusable target (null, array) blocks the alias, like in Node
             imports[alias]?.let { return it.pickTarget()?.removePrefix("./") }
@@ -135,13 +148,23 @@ abstract class Source<C : Config>(val project: Project, private val serializer: 
     /**
      * Resolves a `#` alias using the project's root package.json `imports` field.
      *
-     * @throws Exception If package.json is missing or the alias cannot be resolved
+     * @throws Exception If package.json is missing, unparseable, or the alias cannot be resolved,
+     * with a message telling the user what to fix
      */
     protected fun resolveSubpathImport(alias: String): String {
         val packageJson = FileManager.getInstance(project).getFileContentsAtPath("package.json")
-        return packageJson?.let { resolveSubpathImport(it, alias) }?.also {
+            ?: throw Exception("Cannot find alias $alias: no package.json found at the project root.")
+        val resolved = try {
+            resolveSubpathImport(packageJson, alias)
+        } catch (e: Exception) {
+            throw Exception("Cannot find alias $alias: package.json is not valid JSON. Fix it and try again.", e)
+        }
+        return resolved?.also {
             log.debug("Resolved subpath import $alias to $it")
-        } ?: throw Exception("Cannot find alias $alias in package.json")
+        } ?: throw Exception(
+            "Cannot find alias $alias in package.json. Add a matching entry to its \"imports\" field " +
+                    "(e.g. \"${alias.substringBefore("/")}/*\": \"./src/lib/*\") and try again."
+        )
     }
 
     /**
