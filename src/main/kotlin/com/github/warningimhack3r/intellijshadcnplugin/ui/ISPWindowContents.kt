@@ -1,7 +1,11 @@
 package com.github.warningimhack3r.intellijshadcnplugin.ui
 
 import com.github.warningimhack3r.intellijshadcnplugin.backend.sources.Source
+import com.github.warningimhack3r.intellijshadcnplugin.notifications.NotificationManager
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.diagnostic.ControlFlowException
 import com.intellij.openapi.diagnostic.logger
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.SlowOperations
@@ -96,10 +100,16 @@ class ISPWindowContents(private val source: Source<*>) {
                     JButton("Update all").apply {
                         addActionListener {
                             isEnabled = false
-                            SlowOperations.allowSlowOperations<Throwable> {
-                                installedComponents.forEach { component ->
-                                    source.addComponent(component)
+                            val succeeded = runReportingFailure("Update all components") {
+                                SlowOperations.allowSlowOperations<Throwable> {
+                                    installedComponents.forEach { component ->
+                                        source.addComponent(component)
+                                    }
                                 }
+                            }
+                            if (!succeeded) {
+                                isEnabled = true
+                                return@addActionListener
                             }
                             // TODO: Update the list's row actions
                             val par = parent
@@ -253,10 +263,11 @@ class ISPWindowContents(private val source: Source<*>) {
                         addActionListener {
                             isEnabled = false
                             progressBar.isVisible = !isEnabled
-                            action.action()
+                            val succeeded = runReportingFailure("${action.label} ${rowData.title}", action.action)
                             isEnabled = true
                             progressBar.isVisible = !isEnabled
-                            when (action.actionOnEnd) {
+                            // Leave the row as-is on failure so the user can fix the cause and retry
+                            if (succeeded) when (action.actionOnEnd) {
                                 CompletionAction.REMOVE_TRIGGER -> parent.remove(this)
                                 CompletionAction.REMOVE_ROW -> {
                                     this@row.parent.remove(this@row)
@@ -273,6 +284,25 @@ class ISPWindowContents(private val source: Source<*>) {
                 }
             }, BorderLayout.LINE_END)
         }, BorderLayout.PAGE_END)
+    }
+
+    /**
+     * Runs [action], showing an error notification with the failure's message if it throws.
+     *
+     * @return Whether the action succeeded
+     */
+    private fun runReportingFailure(actionName: String, action: () -> Unit) = try {
+        action()
+        true
+    } catch (e: Exception) {
+        if (e is ControlFlowException) throw e
+        log.warn("Failed to $actionName", e)
+        NotificationManager(source.project).sendNotification(
+            "Failed to $actionName",
+            StringUtil.escapeXmlEntities(e.message ?: e.javaClass.simpleName),
+            NotificationType.ERROR
+        )
+        false
     }
 
     private fun textWrappingLabel(text: String, foregroundColor: Color = JBUI.CurrentTheme.Label.foreground()) =

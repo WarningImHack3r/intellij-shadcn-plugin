@@ -12,6 +12,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Support for Node subpath imports (`#` aliases from `package.json` `imports`), required by SvelteKit 3
+
 ## [0.10.0] - 2025-12-30
 
 ### Fixed

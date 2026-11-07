@@ -38,6 +38,7 @@ open class VueSource(project: Project) : Source<VueConfig>(project, VueConfig.se
     override fun usesDirectoriesForComponents() = true
 
     override fun resolveAlias(alias: String): String {
+        if (alias.startsWith("#")) return resolveSubpathImport(alias)
         if (!alias.startsWith("$") && !alias.startsWith("@") && !alias.startsWith("~")) {
             log.warn("Alias $alias does not start with $, @ or ~, returning it as-is")
             return alias
